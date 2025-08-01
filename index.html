@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Team Location Map - Firebase Collaborative Platform</title>
+    <title>Team Location Map - Admin Controlled Platform</title>
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -75,6 +75,13 @@
             transform: translateY(-2px);
         }
 
+        .btn:disabled {
+            background: #cbd5e0;
+            color: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .btn-secondary {
             background: #718096;
         }
@@ -89,6 +96,19 @@
 
         .btn-danger:hover {
             background: #c53030;
+        }
+
+        .role-badge {
+            background: #48bb78;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .role-badge.viewer {
+            background: #4299e1;
         }
 
         .container {
@@ -387,6 +407,28 @@
             margin-bottom: 1rem;
         }
 
+        .permission-notice {
+            background: #bee3f8;
+            color: #2c5282;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .admin-only {
+            display: none;
+        }
+
+        .admin-only.show {
+            display: flex;
+        }
+
+        .admin-only.show-block {
+            display: block;
+        }
+
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
@@ -454,8 +496,9 @@
                     <span id="connectionText">Connected</span>
                 </div>
                 <span id="userEmail"></span>
+                <div class="role-badge" id="userRole">Viewer</div>
                 <div class="controls">
-                    <button class="btn" onclick="openAddModal()">
+                    <button class="btn admin-only" id="addMemberBtn" onclick="openAddModal()">
                         <i class="fas fa-plus"></i>
                         Add Team Member
                     </button>
@@ -478,6 +521,11 @@
                         <div class="switch" id="connectionToggle"></div>
                         <span>Show Connection Lines</span>
                     </div>
+                </div>
+
+                <div id="permissionNotice" class="permission-notice" style="display: none;">
+                    <i class="fas fa-info-circle"></i>
+                    You have view-only access. Only the admin can modify team member data.
                 </div>
 
                 <div class="section-title">
@@ -569,21 +617,20 @@
             updateDoc, 
             deleteDoc, 
             onSnapshot,
-            serverTimestamp 
+            serverTimestamp,
+            getDoc 
         } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         // TODO: Replace with your Firebase config
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyCgEh2UhEZFCFtn_2h_scIA8YHYTPHPy2M",
-  authDomain: "srt-team-map.firebaseapp.com",
-  databaseURL: "https://srt-team-map-default-rtdb.firebaseio.com",
-  projectId: "srt-team-map",
-  storageBucket: "srt-team-map.firebasestorage.app",
-  messagingSenderId: "1041786833700",
-  appId: "1:1041786833700:web:66bed6ec42cc8eb75d81b1",
-  measurementId: "G-4TRCZJ2Q2L"
-};
+        const firebaseConfig = {
+            // PASTE YOUR FIREBASE CONFIG HERE
+            apiKey: "your-api-key",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "your-app-id"
+        };
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
@@ -608,6 +655,7 @@ const firebaseConfig = {
         window.firebaseDeleteDoc = deleteDoc;
         window.firebaseOnSnapshot = onSnapshot;
         window.firebaseServerTimestamp = serverTimestamp;
+        window.firebaseGetDoc = getDoc;
 
         // Initialize the app once Firebase is loaded
         initializeApp();
@@ -627,21 +675,29 @@ const firebaseConfig = {
         let currentUser = null;
         let unsubscribeTeamMembers = null;
         let isAuthMode = 'login';
+        let isAdmin = false;
+
+        // Admin email - CHANGE THIS TO YOUR EMAIL
+        const ADMIN_EMAIL = 'your-admin-email@example.com';
 
         // Initialize the application
         function initializeApp() {
             // Check authentication state
-            window.firebaseOnAuthStateChanged(window.firebaseAuth, (user) => {
+            window.firebaseOnAuthStateChanged(window.firebaseAuth, async (user) => {
                 if (user) {
                     currentUser = user;
+                    isAdmin = user.email === ADMIN_EMAIL;
+                    
                     document.getElementById('authContainer').style.display = 'none';
                     document.getElementById('mainApp').style.display = 'block';
                     document.getElementById('userEmail').textContent = user.email;
                     
+                    updateUIForRole();
                     initializeMap();
                     subscribeToTeamMembers();
                 } else {
                     currentUser = null;
+                    isAdmin = false;
                     document.getElementById('authContainer').style.display = 'flex';
                     document.getElementById('mainApp').style.display = 'none';
                     
@@ -653,6 +709,35 @@ const firebaseConfig = {
 
             // Setup auth form
             document.getElementById('authForm').addEventListener('submit', handleAuth);
+        }
+
+        // Update UI based on user role
+        function updateUIForRole() {
+            const roleElement = document.getElementById('userRole');
+            const permissionNotice = document.getElementById('permissionNotice');
+            const adminElements = document.querySelectorAll('.admin-only');
+            
+            if (isAdmin) {
+                roleElement.textContent = 'Admin';
+                roleElement.className = 'role-badge';
+                permissionNotice.style.display = 'none';
+                
+                // Show admin controls
+                adminElements.forEach(el => {
+                    if (el.classList.contains('admin-only')) {
+                        el.classList.add('show');
+                    }
+                });
+            } else {
+                roleElement.textContent = 'Viewer';
+                roleElement.className = 'role-badge viewer';
+                permissionNotice.style.display = 'block';
+                
+                // Hide admin controls
+                adminElements.forEach(el => {
+                    el.classList.remove('show', 'show-block');
+                });
+            }
         }
 
         // Handle authentication
@@ -807,20 +892,25 @@ const firebaseConfig = {
             teamMembers.forEach(member => {
                 const memberDiv = document.createElement('div');
                 memberDiv.className = 'team-member';
+                
+                const actionsHtml = isAdmin ? `
+                    <div class="member-actions">
+                        <button class="btn btn-small btn-edit" onclick="editMember('${member.id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-small btn-delete" onclick="deleteMember('${member.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                ` : '';
+                
                 memberDiv.innerHTML = `
                     <div class="member-header">
                         <div>
                             <div class="member-name">${member.name}</div>
                             <div class="member-role">${member.role}</div>
                         </div>
-                        <div class="member-actions">
-                            <button class="btn btn-small btn-edit" onclick="editMember('${member.id}')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-small btn-delete" onclick="deleteMember('${member.id}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
+                        ${actionsHtml}
                     </div>
                     <div class="member-info">
                         <div><strong>Current:</strong> ${member.currentLocation}</div>
@@ -861,7 +951,7 @@ const firebaseConfig = {
                     const birthMarker = L.marker(member.birthCoords, {
                         icon: L.icon({
                             iconUrl: 'data:image/svg+xml;base64,' + btoa(`
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="green" width="25" height="41">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0  0 24 24" fill="green" width="25" height="41">
                                     <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
                                 </svg>
                             `),
@@ -908,8 +998,13 @@ const firebaseConfig = {
             updateMap();
         }
 
-        // Open add modal
+        // Open add modal (admin only)
         function openAddModal() {
+            if (!isAdmin) {
+                alert('Only the admin can add team members.');
+                return;
+            }
+            
             currentEditId = null;
             document.getElementById('modalTitle').textContent = 'Add Team Member';
             document.getElementById('memberForm').reset();
@@ -917,8 +1012,13 @@ const firebaseConfig = {
             document.getElementById('memberModal').style.display = 'block';
         }
 
-        // Edit member
+        // Edit member (admin only)
         function editMember(id) {
+            if (!isAdmin) {
+                alert('Only the admin can edit team members.');
+                return;
+            }
+            
             const member = teamMembers.find(m => m.id === id);
             if (!member) return;
 
@@ -933,8 +1033,13 @@ const firebaseConfig = {
             document.getElementById('memberModal').style.display = 'block';
         }
 
-        // Delete member
+        // Delete member (admin only)
         async function deleteMember(id) {
+            if (!isAdmin) {
+                alert('Only the admin can delete team members.');
+                return;
+            }
+            
             if (confirm('Are you sure you want to delete this team member?')) {
                 try {
                     await window.firebaseDeleteDoc(window.firebaseDoc(window.firebaseDb, 'teamMembers', id));
@@ -958,9 +1063,14 @@ const firebaseConfig = {
             errorDiv.style.display = 'block';
         }
 
-        // Handle form submission
+        // Handle form submission (admin only)
         document.getElementById('memberForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+
+            if (!isAdmin) {
+                showModalError('Only the admin can modify team member data.');
+                return;
+            }
 
             const name = document.getElementById('memberName').value;
             const role = document.getElementById('memberRole').value;
