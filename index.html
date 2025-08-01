@@ -722,18 +722,19 @@ const firebaseConfig = {
         } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         // TODO: Replace with your Firebase config
-        const firebaseConfig = {
-            // PASTE YOUR FIREBASE CONFIG HERE
-            apiKey: "your-api-key-here",
-            authDomain: "your-project.firebaseapp.com",
-            projectId: "your-project-id",
-            storageBucket: "your-project.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "your-app-id"
-        };
+    const firebaseConfig = {
+  apiKey: "AIzaSyCgEh2UhEZFCFtn_2h_scIA8YHYTPHPy2M",
+  authDomain: "srt-team-map.firebaseapp.com",
+  databaseURL: "https://srt-team-map-default-rtdb.firebaseio.com",
+  projectId: "srt-team-map",
+  storageBucket: "srt-team-map.firebasestorage.app",
+  messagingSenderId: "1041786833700",
+  appId: "1:1041786833700:web:66bed6ec42cc8eb75d81b1",
+  measurementId: "G-4TRCZJ2Q2L"
+};
 
         // Check if Firebase config is properly set
-        const isConfigured = firebaseConfig.apiKey !== "your-api-key-here" && 
+        const isConfigured = firebaseConfig.apiKey !== "AIzaSyCgEh2UhEZFCFtn_2h_scIA8YHYTPHPy2M" && 
                            firebaseConfig.apiKey.startsWith("AIzaSy");
 
         if (!isConfigured) {
@@ -794,7 +795,7 @@ const firebaseConfig = {
         let isAdmin = false;
 
         // Admin email - CHANGE THIS TO YOUR EMAIL
-        const ADMIN_EMAIL = 'your-admin-email@example.com';
+        const ADMIN_EMAIL = 'davisluong84@gmail.com';
 
         // Hide config notice
         function hideConfigNotice() {
