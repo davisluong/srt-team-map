@@ -4,14 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Team Location Map - Admin Controlled Platform</title>
-    
-    <!-- Leaflet CSS -->
+    <title>Team Location Map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <style>
         * {
             margin: 0;
@@ -25,197 +19,116 @@
             min-height: 100vh;
         }
 
-        .config-notice {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            background: #fed7d7;
-            color: #c53030;
-            padding: 1rem;
-            text-align: center;
-            z-index: 3000;
-            font-weight: bold;
-        }
-
-        .config-notice.hidden {
-            display: none;
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
         }
 
         .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 1rem 2rem;
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 60px; /* Account for config notice */
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
         }
 
-        .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #4a5568;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 20px;
+            height: calc(100vh - 150px);
+        }
+
+        .map-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
 
         .controls {
             display: flex;
-            gap: 1rem;
+            justify-content: space-between;
             align-items: center;
+            margin-bottom: 15px;
         }
 
-        .btn {
-            background: #4299e1;
+        .toggle-btn {
+            background: #4CAF50;
             color: white;
             border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
+            padding: 10px 20px;
+            border-radius: 25px;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-weight: bold;
             transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
         }
 
-        .btn:hover {
-            background: #3182ce;
+        .toggle-btn:hover {
+            background: #45a049;
             transform: translateY(-2px);
         }
 
-        .btn:disabled {
-            background: #cbd5e0;
-            color: #a0aec0;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-secondary {
-            background: #718096;
-        }
-
-        .btn-secondary:hover {
-            background: #4a5568;
-        }
-
-        .btn-danger {
-            background: #e53e3e;
-        }
-
-        .btn-danger:hover {
-            background: #c53030;
-        }
-
-        .role-badge {
-            background: #48bb78;
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        .role-badge.viewer {
-            background: #4299e1;
-        }
-
-        .container {
-            display: flex;
-            height: calc(100vh - 140px); /* Account for header and config notice */
-            gap: 1rem;
-            padding: 1rem;
-        }
-
-        .sidebar {
-            width: 350px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 1.5rem;
-            overflow-y: auto;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        .map-container {
-            flex: 1;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        .toggle-btn.inactive {
+            background: #f44336;
         }
 
         #map {
-            height: 100%;
-            width: 100%;
+            height: calc(100% - 60px);
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
         }
 
-        .auth-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        }
-
-        .auth-form {
+        .sidebar {
             background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 400px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow-y: auto;
         }
 
-        .auth-title {
-            font-size: 1.5rem;
-            font-weight: bold;
+        .sidebar h2 {
+            color: #333;
+            margin-bottom: 20px;
             text-align: center;
-            margin-bottom: 1.5rem;
-            color: #2d3748;
+            font-size: 1.5rem;
         }
 
         .form-group {
-            margin-bottom: 1rem;
+            margin-bottom: 15px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: #2d3748;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
         }
 
         .form-group input,
-        .form-group textarea,
-        .form-group select {
+        .form-group textarea {
             width: 100%;
-            padding: 0.75rem;
-            border: 2px solid #e2e8f0;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
             border-radius: 8px;
-            font-size: 0.9rem;
+            font-size: 14px;
             transition: border-color 0.3s ease;
         }
 
         .form-group input:focus,
-        .form-group textarea:focus,
-        .form-group select:focus {
+        .form-group textarea:focus {
             outline: none;
-            border-color: #4299e1;
+            border-color: #667eea;
         }
 
         .form-group textarea {
@@ -223,1048 +136,541 @@
             min-height: 80px;
         }
 
-        .team-member {
-            background: #f7fafc;
-            border: 1px solid #e2e8f0;
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
             border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .team-list {
+            margin-top: 20px;
+        }
+
+        .team-member {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
             transition: all 0.3s ease;
         }
 
         .team-member:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             transform: translateY(-2px);
-        }
-
-        .member-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
         }
 
         .member-name {
             font-weight: bold;
-            color: #2d3748;
-            font-size: 1.1rem;
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 5px;
         }
 
         .member-role {
-            color: #4299e1;
-            font-size: 0.9rem;
-            font-weight: 500;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .member-locations {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
         }
 
         .member-actions {
             display: flex;
-            gap: 0.5rem;
+            gap: 8px;
         }
 
         .btn-small {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.8rem;
-            border-radius: 4px;
+            padding: 5px 12px;
+            font-size: 12px;
+            width: auto;
+            margin: 0;
         }
 
-        .btn-edit {
-            background: #ed8936;
-        }
-
-        .btn-edit:hover {
-            background: #dd6b20;
-        }
-
-        .btn-delete {
-            background: #e53e3e;
-        }
-
-        .btn-delete:hover {
-            background: #c53030;
-        }
-
-        .member-info {
-            font-size: 0.9rem;
-            color: #4a5568;
-            line-height: 1.4;
-        }
-
-        .toggle-container {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 1rem;
+        .firebase-status {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 10px;
             border-radius: 8px;
-            margin-bottom: 1rem;
-        }
-
-        .toggle-switch {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            cursor: pointer;
-        }
-
-        .switch {
-            position: relative;
-            width: 50px;
-            height: 24px;
-            background: #cbd5e0;
-            border-radius: 12px;
-            transition: background 0.3s ease;
-        }
-
-        .switch.active {
-            background: #4299e1;
-        }
-
-        .switch::before {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: white;
-            top: 2px;
-            left: 2px;
-            transition: transform 0.3s ease;
-        }
-
-        .switch.active::before {
-            transform: translateX(26px);
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            backdrop-filter: blur(5px);
-        }
-
-        .modal-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 500px;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .modal-title {
-            font-size: 1.25rem;
-            font-weight: bold;
-            color: #2d3748;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #718096;
-        }
-
-        .close-btn:hover {
-            color: #2d3748;
-        }
-
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #2d3748;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .status-indicator {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #48bb78;
-        }
-
-        .status-dot.offline {
-            background: #e53e3e;
-        }
-
-        .loading {
+            margin-bottom: 20px;
             text-align: center;
-            padding: 2rem;
-            color: #718096;
+            font-size: 12px;
         }
 
-        .error-message {
-            background: #fed7d7;
-            color: #c53030;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
+        .firebase-status.error {
+            background: #ffebee;
+            color: #c62828;
         }
 
-        .permission-notice {
-            background: #bee3f8;
-            color: #2c5282;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            text-align: center;
-            font-size: 0.9rem;
-        }
-
-        .admin-only {
-            display: none;
-        }
-
-        .admin-only.show {
-            display: flex;
-        }
-
-        .admin-only.show-block {
-            display: block;
-        }
-
-        .config-instructions {
-            background: #f7fafc;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 2rem;
-            margin: 2rem;
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .config-instructions h3 {
-            color: #2d3748;
-            margin-bottom: 1rem;
-        }
-
-        .config-instructions code {
-            background: #e2e8f0;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-        }
-
-        .config-instructions pre {
-            background: #1a202c;
-            color: #e2e8f0;
-            padding: 1rem;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin: 1rem 0;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr auto;
             }
             
             .sidebar {
-                width: 100%;
-                height: 300px;
+                max-height: 400px;
             }
-            
-            .map-container {
-                height: 400px;
-            }
+        }
+
+        .setup-instructions {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+
+        .setup-instructions h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .setup-instructions code {
+            background: #f8f9fa;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
         }
     </style>
 </head>
 <body>
-    <!-- Configuration Notice -->
-    <div id="configNotice" class="config-notice">
-        ⚠️ Firebase configuration needed! Please update your Firebase config in the code.
-        <button onclick="hideConfigNotice()" style="margin-left: 1rem; background: #c53030; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer;">Hide</button>
-    </div>
-
-    <!-- Configuration Instructions (shown when config is not set) -->
-    <div id="configInstructions" class="config-instructions">
-        <h3>🔧 Firebase Configuration Required</h3>
-        <p>To use this application, you need to configure Firebase. Follow these steps:</p>
-        
-        <h4>Step 1: Get Firebase Configuration</h4>
-        <ol>
-            <li>Go to <a href="https://console.firebase.google.com/" target="_blank">Firebase Console</a></li>
-            <li>Select your project (or create a new one)</li>
-            <li>Click the gear icon ⚙️ → "Project settings"</li>
-            <li>Scroll to "Your apps" → Click web icon &lt;/&gt;</li>
-            <li>Register app with nickname "team-location-map"</li>
-            <li>Copy the configuration object</li>
-        </ol>
-
-        <h4>Step 2: Update Configuration in Code</h4>
-        <p>Find this section in the code and replace with your actual values:</p>
-        <pre><code>
-            // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyCgEh2UhEZFCFtn_2h_scIA8YHYTPHPy2M",
-  authDomain: "srt-team-map.firebaseapp.com",
-  databaseURL: "https://srt-team-map-default-rtdb.firebaseio.com",
-  projectId: "srt-team-map",
-  storageBucket: "srt-team-map.firebasestorage.app",
-  messagingSenderId: "1041786833700",
-  appId: "1:1041786833700:web:66bed6ec42cc8eb75d81b1",
-  measurementId: "G-4TRCZJ2Q2L"
-};
-</code></pre>
-
-        <h4>Step 3: Set Admin Email</h4>
-        <p>Also update the admin email:</p>
-        <pre><code>const ADMIN_EMAIL = 'davisluong84@gmail.com';</code></pre>
-
-        <h4>Step 4: Enable Firebase Services</h4>
-        <ul>
-            <li>Enable Authentication (Email/Password and Google)</li>
-            <li>Create Firestore Database</li>
-            <li>Update Firestore rules (see documentation)</li>
-        </ul>
-    </div>
-
-    <!-- Authentication Container -->
-    <div id="authContainer" class="auth-container" style="display: none;">
-        <div class="auth-form">
-            <div class="auth-title">Team Location Map</div>
-            <div id="authError" class="error-message" style="display: none;"></div>
-            
-            <form id="authForm">
-                <div class="form-group">
-                    <label for="authEmail">Email</label>
-                    <input type="email" id="authEmail" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="authPassword">Password</label>
-                    <input type="password" id="authPassword" required>
-                </div>
-                
-                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-                    <button type="submit" class="btn" style="flex: 1;" data-action="login">
-                        <i class="fas fa-sign-in-alt"></i>
-                        Sign In
-                    </button>
-                    <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="toggleAuthMode()">
-                        Sign Up
-                    </button>
-                </div>
-                
-                <div style="text-align: center; margin-top: 1rem;">
-                    <button type="button" class="btn" onclick="signInWithGoogle()" style="width: 100%;">
-                        <i class="fab fa-google"></i>
-                        Continue with Google
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Main Application -->
-    <div id="mainApp" style="display: none;">
+    <div class="container">
         <div class="header">
-            <div class="logo">
-                <i class="fas fa-globe-americas"></i>
-                Team Location Map
-            </div>
-            <div class="user-info">
-                <div class="status-indicator">
-                    <div class="status-dot" id="connectionStatus"></div>
-                    <span id="connectionText">Connected</span>
-                </div>
-                <span id="userEmail"></span>
-                <div class="role-badge" id="userRole">Viewer</div>
-                <div class="controls">
-                    <button class="btn admin-only" id="addMemberBtn" onclick="openAddModal()">
-                        <i class="fas fa-plus"></i>
-                        Add Team Member
-                    </button>
-                    <button class="btn btn-secondary" onclick="exportData()">
-                        <i class="fas fa-download"></i>
-                        Export Data
-                    </button>
-                    <button class="btn btn-danger" onclick="signOut()">
-                        <i class="fas fa-sign-out-alt"></i>
-                        Sign Out
-                    </button>
-                </div>
-            </div>
+            <h1>🌍 Team Location Map</h1>
+            <p>Visualize your global team connections</p>
         </div>
 
-        <div class="container">
-            <div class="sidebar">
-                <div class="toggle-container">
-                    <div class="toggle-switch" onclick="toggleConnections()">
-                        <div class="switch" id="connectionToggle"></div>
-                        <span>Show Connection Lines</span>
-                    </div>
-                </div>
-
-                <div id="permissionNotice" class="permission-notice" style="display: none;">
-                    <i class="fas fa-info-circle"></i>
-                    You have view-only access. Only the admin can modify team member data.
-                </div>
-
-                <div class="section-title">
-                    <i class="fas fa-users"></i>
-                    Team Members
-                    <span id="memberCount" style="font-size: 0.8rem; color: #718096;">(0)</span>
-                </div>
-                
-                <div id="teamList">
-                    <div class="loading">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        Loading team members...
-                    </div>
-                </div>
-            </div>
-
+        <div class="main-content">
             <div class="map-container">
+                <div class="controls">
+                    <h3>World Map</h3>
+                    <button id="toggleLines" class="toggle-btn">🔗 Hide Connection Lines</button>
+                </div>
                 <div id="map"></div>
             </div>
-        </div>
-    </div>
 
-    <!-- Add/Edit Modal -->
-    <div id="memberModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title" id="modalTitle">Add Team Member</div>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
+            <div class="sidebar">
+                <div class="setup-instructions">
+                    <h3>🚀 Setup Instructions</h3>
+                    <p><strong>1. Firebase Setup:</strong></p>
+                    <p>• Create a Firebase project at <code>console.firebase.google.com</code></p>
+                    <p>• Enable Firestore Database</p>
+                    <p>• Replace the config below with your Firebase config</p>
+                    <p><strong>2. GitHub Deployment:</strong></p>
+                    <p>• Push this HTML file to a GitHub repository</p>
+                    <p>• Enable GitHub Pages in repository settings</p>
+                </div>
+
+                <div id="firebaseStatus" class="firebase-status error">
+                    ⚠️ Firebase not configured. Add your config below.
+                </div>
+
+                <h2>👥 Team Management</h2>
+                
+                <form id="teamForm">
+                    <div class="form-group">
+                        <label for="name">Name *</label>
+                        <input type="text" id="name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="role">Role *</label>
+                        <input type="text" id="role" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="currentLocation">Current Location *</label>
+                        <input type="text" id="currentLocation" placeholder="e.g., Toronto, Canada" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="birthPlace">Birth Place *</label>
+                        <input type="text" id="birthPlace" placeholder="e.g., Mumbai, India" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notes">Notes</label>
+                        <textarea id="notes" placeholder="Additional information..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn">➕ Add Team Member</button>
+                    <button type="button" id="cancelEdit" class="btn btn-secondary" style="display: none;">❌ Cancel Edit</button>
+                </form>
+
+                <div class="team-list">
+                    <h3>Team Members (<span id="memberCount">0</span>)</h3>
+                    <div id="teamMembers"></div>
+                </div>
             </div>
-            
-            <div id="modalError" class="error-message" style="display: none;"></div>
-            
-            <form id="memberForm">
-                <div class="form-group">
-                    <label for="memberName">Name *</label>
-                    <input type="text" id="memberName" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="memberRole">Role *</label>
-                    <input type="text" id="memberRole" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="currentLocation">Current Location *</label>
-                    <input type="text" id="currentLocation" placeholder="e.g., New York, USA" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="birthPlace">Birth Place *</label>
-                    <input type="text" id="birthPlace" placeholder="e.g., London, UK" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="memberNotes">Notes</label>
-                    <textarea id="memberNotes" placeholder="Additional information about the team member..."></textarea>
-                </div>
-                
-                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-                    <button type="submit" class="btn">
-                        <i class="fas fa-save"></i>
-                        Save Member
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { 
-            getAuth, 
-            signInWithEmailAndPassword, 
-            createUserWithEmailAndPassword,
-            signInWithPopup,
-            GoogleAuthProvider,
-            signOut as firebaseSignOut,
-            onAuthStateChanged 
-        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-        import { 
-            getFirestore, 
-            collection, 
-            addDoc, 
-            getDocs, 
-            doc, 
-            updateDoc, 
-            deleteDoc, 
-            onSnapshot,
-            serverTimestamp,
-            getDoc 
-        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Leaflet Maps -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-        // TODO: Replace with your Firebase config
-    const firebaseConfig = {
-  apiKey: "AIzaSyCgEh2UhEZFCFtn_2h_scIA8YHYTPHPy2M",
-  authDomain: "srt-team-map.firebaseapp.com",
-  databaseURL: "https://srt-team-map-default-rtdb.firebaseio.com",
-  projectId: "srt-team-map",
-  storageBucket: "srt-team-map.firebasestorage.app",
-  messagingSenderId: "1041786833700",
-  appId: "1:1041786833700:web:66bed6ec42cc8eb75d81b1",
-  measurementId: "G-4TRCZJ2Q2L"
-};
+    <script>
+        // Firebase Configuration - REPLACE WITH YOUR CONFIG
+        const firebaseConfig = {
+            // Add your Firebase config here
+            apiKey: "your-api-key",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "your-app-id"
+        };
 
-        // Check if Firebase config is properly set
-        const isConfigured = firebaseConfig.apiKey !== "AIzaSyCgEh2UhEZFCFtn_2h_scIA8YHYTPHPy2M" && 
-                           firebaseConfig.apiKey.startsWith("AIzaSy");
+        // Initialize Firebase (will fail with demo config)
+        let db = null;
+        let firebaseInitialized = false;
 
-        if (!isConfigured) {
-            // Show configuration instructions
-            document.getElementById('configInstructions').style.display = 'block';
-            document.getElementById('authContainer').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'none';
-            return; // Don't initialize Firebase
-        } else {
-            // Hide configuration instructions
-            document.getElementById('configInstructions').style.display = 'none';
-            document.getElementById('configNotice').classList.add('hidden');
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            firebaseInitialized = true;
+            document.getElementById('firebaseStatus').innerHTML = '✅ Firebase connected successfully!';
+            document.getElementById('firebaseStatus').className = 'firebase-status';
+        } catch (error) {
+            console.log('Firebase not configured - using local storage');
         }
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const provider = new GoogleAuthProvider();
+        // Initialize Map
+        const map = L.map('map').setView([20, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
 
-        // Make Firebase available globally
-        window.firebaseAuth = auth;
-        window.firebaseDb = db;
-        window.firebaseProvider = provider;
-        window.firebaseSignInWithEmailAndPassword = signInWithEmailAndPassword;
-        window.firebaseCreateUserWithEmailAndPassword = createUserWithEmailAndPassword;
-        window.firebaseSignInWithPopup = signInWithPopup;
-        window.firebaseSignOut = firebaseSignOut;
-        window.firebaseOnAuthStateChanged = onAuthStateChanged;
-        window.firebaseCollection = collection;
-        window.firebaseAddDoc = addDoc;
-        window.firebaseGetDocs = getDocs;
-        window.firebaseDoc = doc;
-        window.firebaseUpdateDoc = updateDoc;
-        window.firebaseDeleteDoc = deleteDoc;
-        window.firebaseOnSnapshot = onSnapshot;
-        window.firebaseServerTimestamp = serverTimestamp;
-        window.firebaseGetDoc = getDoc;
-
-        // Initialize the app once Firebase is loaded
-        initializeApp();
-    </script>
-
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <script>
         // Global variables
-        let map;
         let teamMembers = [];
-        let currentEditId = null;
-        let showConnections = false;
         let markers = [];
         let connectionLines = [];
-        let currentUser = null;
-        let unsubscribeTeamMembers = null;
-        let isAuthMode = 'login';
-        let isAdmin = false;
+        let showLines = true;
+        let editingId = null;
 
-        // Admin email - CHANGE THIS TO YOUR EMAIL
-        const ADMIN_EMAIL = 'davisluong84@gmail.com';
+        // Load team members on startup
+        loadTeamMembers();
 
-        // Hide config notice
-        function hideConfigNotice() {
-            document.getElementById('configNotice').classList.add('hidden');
-        }
+        // Event Listeners
+        document.getElementById('teamForm').addEventListener('submit', handleFormSubmit);
+        document.getElementById('toggleLines').addEventListener('click', toggleConnectionLines);
+        document.getElementById('cancelEdit').addEventListener('click', cancelEdit);
 
-        // Initialize the application
-        function initializeApp() {
-            // Check if Firebase is configured
-            if (!window.firebaseAuth) {
-                return; // Firebase not configured
-            }
-
-            // Check authentication state
-            window.firebaseOnAuthStateChanged(window.firebaseAuth, async (user) => {
-                if (user) {
-                    currentUser = user;
-                    isAdmin = user.email === ADMIN_EMAIL;
-                    
-                    document.getElementById('authContainer').style.display = 'none';
-                    document.getElementById('mainApp').style.display = 'block';
-                    document.getElementById('userEmail').textContent = user.email;
-                    
-                    updateUIForRole();
-                    initializeMap();
-                    subscribeToTeamMembers();
-                } else {
-                    currentUser = null;
-                    isAdmin = false;
-                    document.getElementById('authContainer').style.display = 'flex';
-                    document.getElementById('mainApp').style.display = 'none';
-                    
-                    if (unsubscribeTeamMembers) {
-                        unsubscribeTeamMembers();
-                    }
-                }
-            });
-
-            // Setup auth form
-            document.getElementById('authForm').addEventListener('submit', handleAuth);
-        }
-
-        // Update UI based on user role
-        function updateUIForRole() {
-            const roleElement = document.getElementById('userRole');
-            const permissionNotice = document.getElementById('permissionNotice');
-            const adminElements = document.querySelectorAll('.admin-only');
-            
-            if (isAdmin) {
-                roleElement.textContent = 'Admin';
-                roleElement.className = 'role-badge';
-                permissionNotice.style.display = 'none';
-                
-                // Show admin controls
-                adminElements.forEach(el => {
-                    if (el.classList.contains('admin-only')) {
-                        el.classList.add('show');
-                    }
-                });
-            } else {
-                roleElement.textContent = 'Viewer';
-                roleElement.className = 'role-badge viewer';
-                permissionNotice.style.display = 'block';
-                
-                // Hide admin controls
-                adminElements.forEach(el => {
-                    el.classList.remove('show', 'show-block');
-                });
-            }
-        }
-
-        // Handle authentication
-        async function handleAuth(e) {
+        // Form submission handler
+        async function handleFormSubmit(e) {
             e.preventDefault();
             
-            const email = document.getElementById('authEmail').value;
-            const password = document.getElementById('authPassword').value;
-            const action = e.submitter.dataset.action || isAuthMode;
+            const formData = {
+                name: document.getElementById('name').value,
+                role: document.getElementById('role').value,
+                currentLocation: document.getElementById('currentLocation').value,
+                birthPlace: document.getElementById('birthPlace').value,
+                notes: document.getElementById('notes').value,
+                timestamp: new Date()
+            };
 
             try {
-                if (action === 'login') {
-                    await window.firebaseSignInWithEmailAndPassword(window.firebaseAuth, email, password);
+                if (editingId) {
+                    await updateTeamMember(editingId, formData);
                 } else {
-                    await window.firebaseCreateUserWithEmailAndPassword(window.firebaseAuth, email, password);
+                    await addTeamMember(formData);
                 }
-                hideAuthError();
+                
+                document.getElementById('teamForm').reset();
+                cancelEdit();
+                loadTeamMembers();
             } catch (error) {
-                showAuthError(error.message);
+                alert('Error saving team member: ' + error.message);
             }
         }
 
-        // Sign in with Google
-        async function signInWithGoogle() {
-            try {
-                await window.firebaseSignInWithPopup(window.firebaseAuth, window.firebaseProvider);
-                hideAuthError();
-            } catch (error) {
-                showAuthError(error.message);
-            }
-        }
-
-        // Sign out
-        async function signOut() {
-            try {
-                await window.firebaseSignOut(window.firebaseAuth);
-            } catch (error) {
-                console.error('Sign out error:', error);
-            }
-        }
-
-        // Toggle auth mode
-        function toggleAuthMode() {
-            isAuthMode = isAuthMode === 'login' ? 'signup' : 'login';
-            const submitBtn = document.querySelector('[data-action="login"]');
-            const toggleBtn = document.querySelector('.btn-secondary');
-            
-            if (isAuthMode === 'signup') {
-                submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Sign Up';
-                submitBtn.dataset.action = 'signup';
-                toggleBtn.textContent = 'Sign In';
+        // Add team member
+        async function addTeamMember(memberData) {
+            if (firebaseInitialized) {
+                await db.collection('teamMembers').add(memberData);
             } else {
-                submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
-                submitBtn.dataset.action = 'login';
-                toggleBtn.textContent = 'Sign Up';
+                // Use local storage as fallback
+                const members = JSON.parse(localStorage.getItem('teamMembers') || '[]');
+                memberData.id = Date.now().toString();
+                members.push(memberData);
+                localStorage.setItem('teamMembers', JSON.stringify(members));
             }
         }
 
-        // Show/hide auth errors
-        function showAuthError(message) {
-            const errorDiv = document.getElementById('authError');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
+        // Update team member
+        async function updateTeamMember(id, memberData) {
+            if (firebaseInitialized) {
+                await db.collection('teamMembers').doc(id).update(memberData);
+            } else {
+                const members = JSON.parse(localStorage.getItem('teamMembers') || '[]');
+                const index = members.findIndex(m => m.id === id);
+                if (index !== -1) {
+                    members[index] = { ...members[index], ...memberData };
+                    localStorage.setItem('teamMembers', JSON.stringify(members));
+                }
+            }
         }
 
-        function hideAuthError() {
-            document.getElementById('authError').style.display = 'none';
+        // Delete team member
+        async function deleteTeamMember(id) {
+            if (confirm('Are you sure you want to delete this team member?')) {
+                if (firebaseInitialized) {
+                    await db.collection('teamMembers').doc(id).delete();
+                } else {
+                    const members = JSON.parse(localStorage.getItem('teamMembers') || '[]');
+                    const filtered = members.filter(m => m.id !== id);
+                    localStorage.setItem('teamMembers', JSON.stringify(filtered));
+                }
+                loadTeamMembers();
+            }
         }
 
-        // Initialize the map
-        function initializeMap() {
-            if (map) return; // Already initialized
-            
-            map = L.map('map').setView([20, 0], 2);
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
-        }
-
-        // Subscribe to team members from Firestore
-        function subscribeToTeamMembers() {
-            const teamCollection = window.firebaseCollection(window.firebaseDb, 'teamMembers');
-            
-            unsubscribeTeamMembers = window.firebaseOnSnapshot(teamCollection, (snapshot) => {
-                teamMembers = [];
-                snapshot.forEach((doc) => {
-                    teamMembers.push({
+        // Load team members
+        async function loadTeamMembers() {
+            try {
+                if (firebaseInitialized) {
+                    const snapshot = await db.collection('teamMembers').get();
+                    teamMembers = snapshot.docs.map(doc => ({
                         id: doc.id,
                         ...doc.data()
-                    });
-                });
+                    }));
+                } else {
+                    teamMembers = JSON.parse(localStorage.getItem('teamMembers') || '[]');
+                }
                 
-                renderTeamList();
+                displayTeamMembers();
                 updateMap();
-                updateConnectionStatus(true);
-            }, (error) => {
-                console.error('Error listening to team members:', error);
-                updateConnectionStatus(false);
-            });
-        }
-
-        // Update connection status
-        function updateConnectionStatus(connected) {
-            const statusDot = document.getElementById('connectionStatus');
-            const statusText = document.getElementById('connectionText');
-            
-            if (connected) {
-                statusDot.classList.remove('offline');
-                statusText.textContent = 'Connected';
-            } else {
-                statusDot.classList.add('offline');
-                statusText.textContent = 'Offline';
+            } catch (error) {
+                console.error('Error loading team members:', error);
             }
         }
 
-        // Geocoding function (simplified - in production use a proper geocoding service)
-        async function geocodeLocation(location) {
-            const geocodeData = {
-                "Toronto, Canada": [43.6532, -79.3832],
-                "Vancouver, Canada": [49.2827, -123.1207],
-                "Mexico City, Mexico": [19.4326, -99.1332],
-                "Guadalajara, Mexico": [20.6597, -103.3496],
-                "London, UK": [51.5074, -0.1278],
-                "Mumbai, India": [19.0760, 72.8777],
-                "New York, USA": [40.7128, -74.0060],
-                "Los Angeles, USA": [34.0522, -118.2437],
-                "Paris, France": [48.8566, 2.3522],
-                "Berlin, Germany": [52.5200, 13.4050],
-                "Tokyo, Japan": [35.6762, 139.6503],
-                "Sydney, Australia": [-33.8688, 151.2093],
-                "São Paulo, Brazil": [-23.5505, -46.6333],
-                "Cape Town, South Africa": [-33.9249, 18.4241]
-            };
+        // Display team members in sidebar
+        function displayTeamMembers() {
+            const container = document.getElementById('teamMem bers');
+            const count = document.getElementById('memberCount');
             
-            return geocodeData[location] || [0, 0];
-        }
-
-        // Render team list
-        function renderTeamList() {
-            const teamList = document.getElementById('teamList');
-            const memberCount = document.getElementById('memberCount');
+            count.textContent = teamMembers.length;
             
-            memberCount.textContent = `(${teamMembers.length})`;
-            teamList.innerHTML = '';
-
             if (teamMembers.length === 0) {
-                teamList.innerHTML = '<p style="text-align: center; color: #718096; font-style: italic;">No team members added yet.</p>';
+                container.innerHTML = '<p style="text-align: center; color: #666; font-style: italic;">No team members added yet.</p>';
                 return;
             }
 
-            teamMembers.forEach(member => {
-                const memberDiv = document.createElement('div');
-                memberDiv.className = 'team-member';
-                
-                const actionsHtml = isAdmin ? `
+            container.innerHTML = teamMembers.map(member => `
+                <div class="team-member">
+                    <div class="member-name">${member.name}</div>
+                    <div class="member-role">${member.role}</div>
+                    <div class="member-locations">
+                        📍 Current: ${member.currentLocation}<br>
+                        🏠 Born: ${member.birthPlace}
+                    </div>
+                    ${member.notes ? `<div style="font-size: 12px; color: #666; margin-bottom: 8px;">${member.notes}</div>` : ''}
                     <div class="member-actions">
-                        <button class="btn btn-small btn-edit" onclick="editMember('${member.id}')">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-small btn-delete" onclick="deleteMember('${member.id}')">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        <button class="btn btn-secondary btn-small" onclick="editTeamMember('${member.id}')">✏️ Edit</button>
+                        <button class="btn btn-danger btn-small" onclick="deleteTeamMember('${member.id}')">🗑️ Delete</button>
                     </div>
-                ` : '';
-                
-                memberDiv.innerHTML = `
-                    <div class="member-header">
-                        <div>
-                            <div class="member-name">${member.name}</div>
-                            <div class="member-role">${member.role}</div>
-                        </div>
-                        ${actionsHtml}
-                    </div>
-                    <div class="member-info">
-                        <div><strong>Current:</strong> ${member.currentLocation}</div>
-                        <div><strong>Born:</strong> ${member.birthPlace}</div>
-                        ${member.notes ? `<div><strong>Notes:</strong> ${member.notes}</div>` : ''}
-                    </div>
-                `;
-                teamList.appendChild(memberDiv);
-            });
+                </div>
+            `).join('');
         }
 
-        // Update map with markers and connections
-        function updateMap() {
-            if (!map) return;
-            
+        // Edit team member
+        function editTeamMember(id) {
+            const member = teamMembers.find(m => m.id === id);
+            if (!member) return;
+
+            document.getElementById('name').value = member.name;
+            document.getElementById('role').value = member.role;
+            document.getElementById('currentLocation').value = member.currentLocation;
+            document.getElementById('birthPlace').value = member.birthPlace;
+            document.getElementById('notes').value = member.notes || '';
+
+            editingId = id;
+            document.getElementById('cancelEdit').style.display = 'block';
+            document.querySelector('.btn[type="submit"]').textContent = '💾 Update Team Member';
+        }
+
+        // Cancel edit
+        function cancelEdit() {
+            editingId = null;
+            document.getElementById('cancelEdit').style.display = 'none';
+            document.querySelector('.btn[type="submit"]').textContent = '➕ Add Team Member';
+            document.getElementById('teamForm').reset();
+        }
+
+        // Geocoding function (simplified)
+        async function geocodeLocation(location) {
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}`);
+                const data = await response.json();
+                if (data && data.length > 0) {
+                    return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+                }
+            } catch (error) {
+                console.error('Geocoding error:', error);
+            }
+            return null;
+        }
+
+        // Update map with team members
+        async function updateMap() {
             // Clear existing markers and lines
             markers.forEach(marker => map.removeLayer(marker));
             connectionLines.forEach(line => map.removeLayer(line));
             markers = [];
             connectionLines = [];
 
-            // Add markers for each team member
-            teamMembers.forEach(member => {
-                if (member.currentCoords && member.birthCoords) {
-                    // Current location marker (blue)
-                    const currentMarker = L.marker(member.currentCoords)
-                        .addTo(map)
-                        .bindPopup(`
-                            <div style="text-align: center;">
-                                <strong>${member.name}</strong><br>
-                                <em>${member.role}</em><br>
-                                <small>Current Location</small>
+            for (const member of teamMembers) {
+                try {
+                    const currentCoords = await geocodeLocation(member.currentLocation);
+                    const birthCoords = await geocodeLocation(member.birthPlace);
+
+                    if (currentCoords) {
+                        // Current location marker (blue)
+                        const currentMarker = L.marker(currentCoords, {
+                            icon: L.divIcon({
+                                className: 'custom-marker',
+                                html: `<div style="background: #007bff; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">📍</div>`,
+                                iconSize: [30, 30],
+                                iconAnchor: [15, 15]
+                            })
+                        }).addTo(map);
+
+                        currentMarker.bindPopup(`
+                            <div style="font-family: 'Segoe UI', sans-serif;">
+                                <h4 style="margin: 0 0 8px 0; color: #333;">${member.name}</h4>
+                                <p style="margin: 0 0 4px 0; color: #007bff; font-weight: bold;">${member.role}</p>
+                                <p style="margin: 0 0 4px 0; font-size: 12px;"><strong>Current:</strong> ${member.currentLocation}</p>
+                                <p style="margin: 0 0 4px 0; font-size: 12px;"><strong>Born:</strong> ${member.birthPlace}</p>
+                                ${member.notes ? `<p style="margin: 4px 0 0 0; font-size: 11px; color: #666; font-style: italic;">${member.notes}</p>` : ''}
                             </div>
                         `);
-                    markers.push(currentMarker);
+                        markers.push(currentMarker);
+                    }
 
-                    // Birth place marker (green)
-                    const birthMarker = L.marker(member.birthCoords, {
-                        icon: L.icon({
-                            iconUrl: 'data:image/svg+xml;base64,' + btoa(`
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="green" width="25" height="41">
-                                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                                </svg>
-                            `),
-                            iconSize: [25, 41],
-                            iconAnchor: [12, 41],
-                            popupAnchor: [1, -34]
-                        })
-                    })
-                        .addTo(map)
-                        .bindPopup(`
-                            <div style="text-align: center;">
-                                <strong>${member.name}</strong><br>
-                                <em>${member.role}</em><br>
-                                <small>Birth Place</small>
+                    if (birthCoords) {
+                        // Birth place marker (green)
+                        const birthMarker = L.marker(birthCoords, {
+                            icon: L.divIcon({
+                                className: 'custom-marker',
+                                html: `<div style="background: #28a745; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">🏠</div>`,
+                                iconSize: [25, 25],
+                                iconAnchor: [12.5, 12.5]
+                            })
+                        }).addTo(map);
+
+                        birthMarker.bindPopup(`
+                            <div style="font-family: 'Segoe UI', sans-serif;">
+                                <h4 style="margin: 0 0 8px 0; color: #333;">${member.name}</h4>
+                                <p style="margin: 0 0 4px 0; color: #28a745; font-weight: bold;">Birth Place</p>
+                                <p style="margin: 0; font-size: 12px;">${member.birthPlace}</p>
                             </div>
                         `);
-                    markers.push(birthMarker);
+                        markers.push(birthMarker);
+                    }
 
-                    // Connection line (if enabled)
-                    if (showConnections) {
-                        const connectionLine = L.polyline([member.currentCoords, member.birthCoords], {
-                            color: '#4299e1',
+                    // Connection line
+                    if (currentCoords && birthCoords && showLines) {
+                        const line = L.polyline([currentCoords, birthCoords], {
+                            color: '#ff6b6b',
                             weight: 2,
                             opacity: 0.7,
                             dashArray: '10, 10'
                         }).addTo(map);
-                        connectionLines.push(connectionLine);
+                        connectionLines.push(line);
                     }
+                } catch (error) {
+                    console.error(`Error processing member ${member.name}:`, error);
                 }
-            });
+            }
+
+            // Fit map to show all markers
+            if (markers.length > 0) {
+                const group = new L.featureGroup(markers);
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
         }
 
         // Toggle connection lines
-        function toggleConnections() {
-            showConnections = !showConnections;
-            const toggle = document.getElementById('connectionToggle');
+        function toggleConnectionLines() {
+            showLines = !showLines;
+            const button = document.getElementById('toggleLines');
             
-            if (showConnections) {
-                toggle.classList.add('active');
+            if (showLines) {
+                button.textContent = '🔗 Hide Connection Lines';
+                button.className = 'toggle-btn';
             } else {
-                toggle.classList.remove('active');
+                button.textContent = '🔗 Show Connection Lines';
+                button.className = 'toggle-btn inactive';
             }
-            
+
+            // Update map to show/hide lines
             updateMap();
         }
 
-        // Open add modal (admin only)
-        function openAddModal() {
-            if (!isAdmin) {
-                alert('Only the admin can add team members.');
-                return;
-            }
-            
-            currentEditId = null;
-            document.getElementById('modalTitle').textContent = 'Add Team Member';
-            document.getElementById('memberForm').reset();
-            document.getElementById('modalError').style.display = 'none';
-            document.getElementById('memberModal').style.display = 'block';
-        }
-
-        // Edit member (admin only)
-        function editMember(id) {
-            if (!isAdmin) {
-                alert('Only the admin can edit team members.');
-                return;
-            }
-            
-            const member = teamMembers.find(m => m.id === id);
-            if (!member) return;
-
-            currentEditId = id;
-            document.getElementById('modalTitle').textContent = 'Edit Team Member';
-            document.getElementById('memberName').value = member.name;
-            document.getElementById('memberRole').value = member.role;
-            document.getElementById('currentLocation').value = member.currentLocation;
-            document.getElementById('birthPlace').value = member.birthPlace;
-            document.getElementById('memberNotes').value = member.notes || '';
-            document.getElementById('modalError').style.display = 'none';
-            document.getElementById('memberModal').style.display = 'block';
-        }
-
-        // Delete member (admin only)
-        async function deleteMember(id) {
-            if (!isAdmin) {
-                alert('Only the admin can delete team members.');
-                return;
-            }
-            
-            if (confirm('Are you sure you want to delete this team member?')) {
-                try {
-                    await window.firebaseDeleteDoc(window.firebaseDoc(window.firebaseDb, 'teamMembers', id));
-                } catch (error) {
-                    console.error('Error deleting member:', error);
-                    alert('Error deleting team member. Please try again.');
+        // Add some demo data if no Firebase
+        if (!firebaseInitialized && teamMembers.length === 0) {
+            const demoMembers = [
+                {
+                    id: '1',
+                    name: 'Sarah Chen',
+                    role: 'Senior Developer',
+                    currentLocation: 'Toronto, Canada',
+                    birthPlace: 'Shanghai, China',
+                    notes: 'Full-stack developer specializing in React and Node.js'
+                },
+                {
+                    id: '2',
+                    name: 'Marcus Johnson',
+                    role: 'Product Manager',
+                    currentLocation: 'New York, USA',
+                    birthPlace: 'Lagos, Nigeria',
+                    notes: 'Passionate about user experience and agile methodologies'
                 }
-            }
+            ];
+            
+            localStorage.setItem('teamMembers', JSON.stringify(demoMembers));
+            loadTeamMembers();
         }
-
-        // Close modal
-        function closeModal() {
-            document.getElementById('memberModal').style.display = 'none';
-            currentEditId = null;
-        }
-
-        // Show modal error
-        function showModalError(message) {
-            const errorDiv = document.getElementById('modalError');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
-
-        // Handle form submission (admin only)
-        document.getElementById('memberForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            if (!isAdmin) {
-                showModalError('Only the admin can modify team member data.');
-                return;
-            }
-
-            const name = document.getElementById('memberName').value;
-            const role = document.getElementById('memberRole').value;
-            const currentLocation = document.getElementById('currentLocation').value;
-            const birthPlace = document.getElementById('birthPlace').value;
-            const notes = document.getElementById('memberNotes').value;
-
-            try {
-                // Geocode locations
-                const currentCoords = await geocodeLocation(currentLocation);
-                const birthCoords = await geocodeLocation(birthPlace);
-
-                const memberData = {
-                    name,
-                    role,
-                    currentLocation,
-                    birthPlace,
-                    notes,
-                    currentCoords,
-                    birthCoords,
-                    createdAt: window.firebaseServerTimestamp(),
-                    createdBy: currentUser.uid
-                };
-
-                if (currentEditId) {
-                    // Edit existing member
-                    await window.firebaseUpdateDoc(
-                        window.firebaseDoc(window.firebaseDb, 'teamMembers', currentEditId), 
-                        {
-                            ...memberData,
-                            updatedAt: window.firebaseServerTimestamp()
-                        }
-                    );
-                } else {
-                    // Add new member
-                    await window.firebaseAddDoc(
-                        window.firebaseCollection(window.firebaseDb, 'teamMembers'), 
-                        memberData
-                    );
-                }
-
-                closeModal();
-            } catch (error) {
-                console.error('Error saving member:', error);
-                showModalError('Error saving team member. Please try again.');
-            }
-        });
-
-        // Export data
-        function exportData() {
-            const dataStr = JSON.stringify(teamMembers, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `team-members-${new Date().toISOString().split('T')[0]}.json`;
-            link.click();
-            URL.revokeObjectURL(url);
-        }
-
-        // Close modal when clicking outside
-        window.addEventListener('click', function(e) {
-            const modal = document.getElementById('memberModal');
-            if (e.target === modal) {
-                closeModal();
-            }
-        });
     </script>
 </body>
 </html>
