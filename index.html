@@ -25,6 +25,23 @@
             min-height: 100vh;
         }
 
+        .config-notice {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: #fed7d7;
+            color: #c53030;
+            padding: 1rem;
+            text-align: center;
+            z-index: 3000;
+            font-weight: bold;
+        }
+
+        .config-notice.hidden {
+            display: none;
+        }
+
         .header {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
@@ -33,6 +50,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-top: 60px; /* Account for config notice */
         }
 
         .logo {
@@ -113,7 +131,7 @@
 
         .container {
             display: flex;
-            height: calc(100vh - 80px);
+            height: calc(100vh - 140px); /* Account for header and config notice */
             gap: 1rem;
             padding: 1rem;
         }
@@ -429,6 +447,38 @@
             display: block;
         }
 
+        .config-instructions {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .config-instructions h3 {
+            color: #2d3748;
+            margin-bottom: 1rem;
+        }
+
+        .config-instructions code {
+            background: #e2e8f0;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .config-instructions pre {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
@@ -446,8 +496,57 @@
     </style>
 </head>
 <body>
+    <!-- Configuration Notice -->
+    <div id="configNotice" class="config-notice">
+        ⚠️ Firebase configuration needed! Please update your Firebase config in the code.
+        <button onclick="hideConfigNotice()" style="margin-left: 1rem; background: #c53030; color: white; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer;">Hide</button>
+    </div>
+
+    <!-- Configuration Instructions (shown when config is not set) -->
+    <div id="configInstructions" class="config-instructions">
+        <h3>🔧 Firebase Configuration Required</h3>
+        <p>To use this application, you need to configure Firebase. Follow these steps:</p>
+        
+        <h4>Step 1: Get Firebase Configuration</h4>
+        <ol>
+            <li>Go to <a href="https://console.firebase.google.com/" target="_blank">Firebase Console</a></li>
+            <li>Select your project (or create a new one)</li>
+            <li>Click the gear icon ⚙️ → "Project settings"</li>
+            <li>Scroll to "Your apps" → Click web icon &lt;/&gt;</li>
+            <li>Register app with nickname "team-location-map"</li>
+            <li>Copy the configuration object</li>
+        </ol>
+
+        <h4>Step 2: Update Configuration in Code</h4>
+        <p>Find this section in the code and replace with your actual values:</p>
+        <pre><code>
+            // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCgEh2UhEZFCFtn_2h_scIA8YHYTPHPy2M",
+  authDomain: "srt-team-map.firebaseapp.com",
+  databaseURL: "https://srt-team-map-default-rtdb.firebaseio.com",
+  projectId: "srt-team-map",
+  storageBucket: "srt-team-map.firebasestorage.app",
+  messagingSenderId: "1041786833700",
+  appId: "1:1041786833700:web:66bed6ec42cc8eb75d81b1",
+  measurementId: "G-4TRCZJ2Q2L"
+};
+</code></pre>
+
+        <h4>Step 3: Set Admin Email</h4>
+        <p>Also update the admin email:</p>
+        <pre><code>const ADMIN_EMAIL = 'davisluong84@gmail.com';</code></pre>
+
+        <h4>Step 4: Enable Firebase Services</h4>
+        <ul>
+            <li>Enable Authentication (Email/Password and Google)</li>
+            <li>Create Firestore Database</li>
+            <li>Update Firestore rules (see documentation)</li>
+        </ul>
+    </div>
+
     <!-- Authentication Container -->
-    <div id="authContainer" class="auth-container">
+    <div id="authContainer" class="auth-container" style="display: none;">
         <div class="auth-form">
             <div class="auth-title">Team Location Map</div>
             <div id="authError" class="error-message" style="display: none;"></div>
@@ -622,17 +721,31 @@
         } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
         // TODO: Replace with your Firebase config
-       // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyCgEh2UhEZFCFtn_2h_scIA8YHYTPHPy2M",
-  authDomain: "srt-team-map.firebaseapp.com",
-  databaseURL: "https://srt-team-map-default-rtdb.firebaseio.com",
-  projectId: "srt-team-map",
-  storageBucket: "srt-team-map.firebasestorage.app",
-  messagingSenderId: "1041786833700",
-  appId: "1:1041786833700:web:66bed6ec42cc8eb75d81b1",
-  measurementId: "G-4TRCZJ2Q2L"
-};
+        const firebaseConfig = {
+            // PASTE YOUR FIREBASE CONFIG HERE
+            apiKey: "your-api-key-here",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "your-app-id"
+        };
+
+        // Check if Firebase config is properly set
+        const isConfigured = firebaseConfig.apiKey !== "your-api-key-here" && 
+                           firebaseConfig.apiKey.startsWith("AIzaSy");
+
+        if (!isConfigured) {
+            // Show configuration instructions
+            document.getElementById('configInstructions').style.display = 'block';
+            document.getElementById('authContainer').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'none';
+            return; // Don't initialize Firebase
+        } else {
+            // Hide configuration instructions
+            document.getElementById('configInstructions').style.display = 'none';
+            document.getElementById('configNotice').classList.add('hidden');
+        }
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
@@ -682,8 +795,18 @@ const firebaseConfig = {
         // Admin email - CHANGE THIS TO YOUR EMAIL
         const ADMIN_EMAIL = 'your-admin-email@example.com';
 
+        // Hide config notice
+        function hideConfigNotice() {
+            document.getElementById('configNotice').classList.add('hidden');
+        }
+
         // Initialize the application
         function initializeApp() {
+            // Check if Firebase is configured
+            if (!window.firebaseAuth) {
+                return; // Firebase not configured
+            }
+
             // Check authentication state
             window.firebaseOnAuthStateChanged(window.firebaseAuth, async (user) => {
                 if (user) {
@@ -953,7 +1076,7 @@ const firebaseConfig = {
                     const birthMarker = L.marker(member.birthCoords, {
                         icon: L.icon({
                             iconUrl: 'data:image/svg+xml;base64,' + btoa(`
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0  0 24 24" fill="green" width="25" height="41">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="green" width="25" height="41">
                                     <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
                                 </svg>
                             `),
