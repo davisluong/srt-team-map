@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Team Location Map - Collaborative Platform</title>
+    <title>Team Location Map - Firebase Collaborative Platform</title>
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -44,6 +44,12 @@
             gap: 0.5rem;
         }
 
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
         .controls {
             display: flex;
             gap: 1rem;
@@ -77,6 +83,14 @@
             background: #4a5568;
         }
 
+        .btn-danger {
+            background: #e53e3e;
+        }
+
+        .btn-danger:hover {
+            background: #c53030;
+        }
+
         .container {
             display: flex;
             height: calc(100vh - 80px);
@@ -105,6 +119,36 @@
         #map {
             height: 100%;
             width: 100%;
+        }
+
+        .auth-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .auth-form {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .auth-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #2d3748;
         }
 
         .form-group {
@@ -311,6 +355,38 @@
             gap: 0.5rem;
         }
 
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #48bb78;
+        }
+
+        .status-dot.offline {
+            background: #e53e3e;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #718096;
+        }
+
+        .error-message {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
@@ -328,44 +404,99 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="logo">
-            <i class="fas fa-globe-americas"></i>
-            Team Location Map
-        </div>
-        <div class="controls">
-            <button class="btn" onclick="openAddModal()">
-                <i class="fas fa-plus"></i>
-                Add Team Member
-            </button>
-            <button class="btn btn-secondary" onclick="exportData()">
-                <i class="fas fa-download"></i>
-                Export Data
-            </button>
+    <!-- Authentication Container -->
+    <div id="authContainer" class="auth-container">
+        <div class="auth-form">
+            <div class="auth-title">Team Location Map</div>
+            <div id="authError" class="error-message" style="display: none;"></div>
+            
+            <form id="authForm">
+                <div class="form-group">
+                    <label for="authEmail">Email</label>
+                    <input type="email" id="authEmail" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="authPassword">Password</label>
+                    <input type="password" id="authPassword" required>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="submit" class="btn" style="flex: 1;" data-action="login">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Sign In
+                    </button>
+                    <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="toggleAuthMode()">
+                        Sign Up
+                    </button>
+                </div>
+                
+                <div style="text-align: center; margin-top: 1rem;">
+                    <button type="button" class="btn" onclick="signInWithGoogle()" style="width: 100%;">
+                        <i class="fab fa-google"></i>
+                        Continue with Google
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <div class="container">
-        <div class="sidebar">
-            <div class="toggle-container">
-                <div class="toggle-switch" onclick="toggleConnections()">
-                    <div class="switch" id="connectionToggle"></div>
-                    <span>Show Connection Lines</span>
+    <!-- Main Application -->
+    <div id="mainApp" style="display: none;">
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-globe-americas"></i>
+                Team Location Map
+            </div>
+            <div class="user-info">
+                <div class="status-indicator">
+                    <div class="status-dot" id="connectionStatus"></div>
+                    <span id="connectionText">Connected</span>
                 </div>
-            </div>
-
-            <div class="section-title">
-                <i class="fas fa-users"></i>
-                Team Members
-            </div>
-            
-            <div id="teamList">
-                <!-- Team members will be populated here -->
+                <span id="userEmail"></span>
+                <div class="controls">
+                    <button class="btn" onclick="openAddModal()">
+                        <i class="fas fa-plus"></i>
+                        Add Team Member
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportData()">
+                        <i class="fas fa-download"></i>
+                        Export Data
+                    </button>
+                    <button class="btn btn-danger" onclick="signOut()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Sign Out
+                    </button>
+                </div>
             </div>
         </div>
 
-        <div class="map-container">
-            <div id="map"></div>
+        <div class="container">
+            <div class="sidebar">
+                <div class="toggle-container">
+                    <div class="toggle-switch" onclick="toggleConnections()">
+                        <div class="switch" id="connectionToggle"></div>
+                        <span>Show Connection Lines</span>
+                    </div>
+                </div>
+
+                <div class="section-title">
+                    <i class="fas fa-users"></i>
+                    Team Members
+                    <span id="memberCount" style="font-size: 0.8rem; color: #718096;">(0)</span>
+                </div>
+                
+                <div id="teamList">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        Loading team members...
+                    </div>
+                </div>
+            </div>
+
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
         </div>
     </div>
 
@@ -376,6 +507,8 @@
                 <div class="modal-title" id="modalTitle">Add Team Member</div>
                 <button class="close-btn" onclick="closeModal()">&times;</button>
             </div>
+            
+            <div id="modalError" class="error-message" style="display: none;"></div>
             
             <form id="memberForm">
                 <div class="form-group">
@@ -414,6 +547,72 @@
         </div>
     </div>
 
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword,
+            signInWithPopup,
+            GoogleAuthProvider,
+            signOut as firebaseSignOut,
+            onAuthStateChanged 
+        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            getDocs, 
+            doc, 
+            updateDoc, 
+            deleteDoc, 
+            onSnapshot,
+            serverTimestamp 
+        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // TODO: Replace with your Firebase config
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCgEh2UhEZFCFtn_2h_scIA8YHYTPHPy2M",
+  authDomain: "srt-team-map.firebaseapp.com",
+  databaseURL: "https://srt-team-map-default-rtdb.firebaseio.com",
+  projectId: "srt-team-map",
+  storageBucket: "srt-team-map.firebasestorage.app",
+  messagingSenderId: "1041786833700",
+  appId: "1:1041786833700:web:66bed6ec42cc8eb75d81b1",
+  measurementId: "G-4TRCZJ2Q2L"
+};
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        // Make Firebase available globally
+        window.firebaseAuth = auth;
+        window.firebaseDb = db;
+        window.firebaseProvider = provider;
+        window.firebaseSignInWithEmailAndPassword = signInWithEmailAndPassword;
+        window.firebaseCreateUserWithEmailAndPassword = createUserWithEmailAndPassword;
+        window.firebaseSignInWithPopup = signInWithPopup;
+        window.firebaseSignOut = firebaseSignOut;
+        window.firebaseOnAuthStateChanged = onAuthStateChanged;
+        window.firebaseCollection = collection;
+        window.firebaseAddDoc = addDoc;
+        window.firebaseGetDocs = getDocs;
+        window.firebaseDoc = doc;
+        window.firebaseUpdateDoc = updateDoc;
+        window.firebaseDeleteDoc = deleteDoc;
+        window.firebaseOnSnapshot = onSnapshot;
+        window.firebaseServerTimestamp = serverTimestamp;
+
+        // Initialize the app once Firebase is loaded
+        initializeApp();
+    </script>
+
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
@@ -425,17 +624,108 @@
         let showConnections = false;
         let markers = [];
         let connectionLines = [];
+        let currentUser = null;
+        let unsubscribeTeamMembers = null;
+        let isAuthMode = 'login';
 
         // Initialize the application
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeMap();
-            loadSampleData();
-            renderTeamList();
-            updateMap();
-        });
+        function initializeApp() {
+            // Check authentication state
+            window.firebaseOnAuthStateChanged(window.firebaseAuth, (user) => {
+                if (user) {
+                    currentUser = user;
+                    document.getElementById('authContainer').style.display = 'none';
+                    document.getElementById('mainApp').style.display = 'block';
+                    document.getElementById('userEmail').textContent = user.email;
+                    
+                    initializeMap();
+                    subscribeToTeamMembers();
+                } else {
+                    currentUser = null;
+                    document.getElementById('authContainer').style.display = 'flex';
+                    document.getElementById('mainApp').style.display = 'none';
+                    
+                    if (unsubscribeTeamMembers) {
+                        unsubscribeTeamMembers();
+                    }
+                }
+            });
+
+            // Setup auth form
+            document.getElementById('authForm').addEventListener('submit', handleAuth);
+        }
+
+        // Handle authentication
+        async function handleAuth(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+            const action = e.submitter.dataset.action || isAuthMode;
+
+            try {
+                if (action === 'login') {
+                    await window.firebaseSignInWithEmailAndPassword(window.firebaseAuth, email, password);
+                } else {
+                    await window.firebaseCreateUserWithEmailAndPassword(window.firebaseAuth, email, password);
+                }
+                hideAuthError();
+            } catch (error) {
+                showAuthError(error.message);
+            }
+        }
+
+        // Sign in with Google
+        async function signInWithGoogle() {
+            try {
+                await window.firebaseSignInWithPopup(window.firebaseAuth, window.firebaseProvider);
+                hideAuthError();
+            } catch (error) {
+                showAuthError(error.message);
+            }
+        }
+
+        // Sign out
+        async function signOut() {
+            try {
+                await window.firebaseSignOut(window.firebaseAuth);
+            } catch (error) {
+                console.error('Sign out error:', error);
+            }
+        }
+
+        // Toggle auth mode
+        function toggleAuthMode() {
+            isAuthMode = isAuthMode === 'login' ? 'signup' : 'login';
+            const submitBtn = document.querySelector('[data-action="login"]');
+            const toggleBtn = document.querySelector('.btn-secondary');
+            
+            if (isAuthMode === 'signup') {
+                submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Sign Up';
+                submitBtn.dataset.action = 'signup';
+                toggleBtn.textContent = 'Sign In';
+            } else {
+                submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+                submitBtn.dataset.action = 'login';
+                toggleBtn.textContent = 'Sign Up';
+            }
+        }
+
+        // Show/hide auth errors
+        function showAuthError(message) {
+            const errorDiv = document.getElementById('authError');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideAuthError() {
+            document.getElementById('authError').style.display = 'none';
+        }
 
         // Initialize the map
         function initializeMap() {
+            if (map) return; // Already initialized
+            
             map = L.map('map').setView([20, 0], 2);
             
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -443,46 +733,44 @@
             }).addTo(map);
         }
 
-        // Load sample data
-        function loadSampleData() {
-            teamMembers = [
-                {
-                    id: 1,
-                    name: "Sarah Johnson",
-                    role: "Frontend Developer",
-                    currentLocation: "Toronto, Canada",
-                    birthPlace: "Vancouver, Canada",
-                    notes: "Specializes in React and Vue.js. Loves hiking and photography.",
-                    currentCoords: [43.6532, -79.3832],
-                    birthCoords: [49.2827, -123.1207]
-                },
-                {
-                    id: 2,
-                    name: "Miguel Rodriguez",
-                    role: "Backend Engineer",
-                    currentLocation: "Mexico City, Mexico",
-                    birthPlace: "Guadalajara, Mexico",
-                    notes: "Expert in Node.js and Python. Passionate about AI and machine learning.",
-                    currentCoords: [19.4326, -99.1332],
-                    birthCoords: [20.6597, -103.3496]
-                },
-                {
-                    id: 3,
-                    name: "Priya Patel",
-                    role: "UX Designer",
-                    currentLocation: "London, UK",
-                    birthPlace: "Mumbai, India",
-                    notes: "Creative designer with 5+ years experience. Loves user research and prototyping.",
-                    currentCoords: [51.5074, -0.1278],
-                    birthCoords: [19.0760, 72.8777]
-                }
-            ];
+        // Subscribe to team members from Firestore
+        function subscribeToTeamMembers() {
+            const teamCollection = window.firebaseCollection(window.firebaseDb, 'teamMembers');
+            
+            unsubscribeTeamMembers = window.firebaseOnSnapshot(teamCollection, (snapshot) => {
+                teamMembers = [];
+                snapshot.forEach((doc) => {
+                    teamMembers.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                renderTeamList();
+                updateMap();
+                updateConnectionStatus(true);
+            }, (error) => {
+                console.error('Error listening to team members:', error);
+                updateConnectionStatus(false);
+            });
+        }
+
+        // Update connection status
+        function updateConnectionStatus(connected) {
+            const statusDot = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('connectionText');
+            
+            if (connected) {
+                statusDot.classList.remove('offline');
+                statusText.textContent = 'Connected';
+            } else {
+                statusDot.classList.add('offline');
+                statusText.textContent = 'Offline';
+            }
         }
 
         // Geocoding function (simplified - in production use a proper geocoding service)
         async function geocodeLocation(location) {
-            // This is a simplified geocoding function
-            // In a real application, you'd use a proper geocoding service like Google Maps API
             const geocodeData = {
                 "Toronto, Canada": [43.6532, -79.3832],
                 "Vancouver, Canada": [49.2827, -123.1207],
@@ -495,7 +783,9 @@
                 "Paris, France": [48.8566, 2.3522],
                 "Berlin, Germany": [52.5200, 13.4050],
                 "Tokyo, Japan": [35.6762, 139.6503],
-                "Sydney, Australia": [-33.8688, 151.2093]
+                "Sydney, Australia": [-33.8688, 151.2093],
+                "São Paulo, Brazil": [-23.5505, -46.6333],
+                "Cape Town, South Africa": [-33.9249, 18.4241]
             };
             
             return geocodeData[location] || [0, 0];
@@ -504,6 +794,9 @@
         // Render team list
         function renderTeamList() {
             const teamList = document.getElementById('teamList');
+            const memberCount = document.getElementById('memberCount');
+            
+            memberCount.textContent = `(${teamMembers.length})`;
             teamList.innerHTML = '';
 
             if (teamMembers.length === 0) {
@@ -521,10 +814,10 @@
                             <div class="member-role">${member.role}</div>
                         </div>
                         <div class="member-actions">
-                            <button class="btn btn-small btn-edit" onclick="editMember(${member.id})">
+                            <button class="btn btn-small btn-edit" onclick="editMember('${member.id}')">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="btn btn-small btn-delete" onclick="deleteMember(${member.id})">
+                            <button class="btn btn-small btn-delete" onclick="deleteMember('${member.id}')">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -541,6 +834,8 @@
 
         // Update map with markers and connections
         function updateMap() {
+            if (!map) return;
+            
             // Clear existing markers and lines
             markers.forEach(marker => map.removeLayer(marker));
             connectionLines.forEach(line => map.removeLayer(line));
@@ -618,6 +913,7 @@
             currentEditId = null;
             document.getElementById('modalTitle').textContent = 'Add Team Member';
             document.getElementById('memberForm').reset();
+            document.getElementById('modalError').style.display = 'none';
             document.getElementById('memberModal').style.display = 'block';
         }
 
@@ -633,15 +929,19 @@
             document.getElementById('currentLocation').value = member.currentLocation;
             document.getElementById('birthPlace').value = member.birthPlace;
             document.getElementById('memberNotes').value = member.notes || '';
+            document.getElementById('modalError').style.display = 'none';
             document.getElementById('memberModal').style.display = 'block';
         }
 
         // Delete member
-        function deleteMember(id) {
+        async function deleteMember(id) {
             if (confirm('Are you sure you want to delete this team member?')) {
-                teamMembers = teamMembers.filter(m => m.id !== id);
-                renderTeamList();
-                updateMap();
+                try {
+                    await window.firebaseDeleteDoc(window.firebaseDoc(window.firebaseDb, 'teamMembers', id));
+                } catch (error) {
+                    console.error('Error deleting member:', error);
+                    alert('Error deleting team member. Please try again.');
+                }
             }
         }
 
@@ -649,6 +949,13 @@
         function closeModal() {
             document.getElementById('memberModal').style.display = 'none';
             currentEditId = null;
+        }
+
+        // Show modal error
+        function showModalError(message) {
+            const errorDiv = document.getElementById('modalError');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
         }
 
         // Handle form submission
@@ -661,35 +968,45 @@
             const birthPlace = document.getElementById('birthPlace').value;
             const notes = document.getElementById('memberNotes').value;
 
-            // Geocode locations
-            const currentCoords = await geocodeLocation(currentLocation);
-            const birthCoords = await geocodeLocation(birthPlace);
+            try {
+                // Geocode locations
+                const currentCoords = await geocodeLocation(currentLocation);
+                const birthCoords = await geocodeLocation(birthPlace);
 
-            const memberData = {
-                name,
-                role,
-                currentLocation,
-                birthPlace,
-                notes,
-                currentCoords,
-                birthCoords
-            };
+                const memberData = {
+                    name,
+                    role,
+                    currentLocation,
+                    birthPlace,
+                    notes,
+                    currentCoords,
+                    birthCoords,
+                    createdAt: window.firebaseServerTimestamp(),
+                    createdBy: currentUser.uid
+                };
 
-            if (currentEditId) {
-                // Edit existing member
-                const index = teamMembers.findIndex(m => m.id === currentEditId);
-                if (index !== -1) {
-                    teamMembers[index] = { ...memberData, id: currentEditId };
+                if (currentEditId) {
+                    // Edit existing member
+                    await window.firebaseUpdateDoc(
+                        window.firebaseDoc(window.firebaseDb, 'teamMembers', currentEditId), 
+                        {
+                            ...memberData,
+                            updatedAt: window.firebaseServerTimestamp()
+                        }
+                    );
+                } else {
+                    // Add new member
+                    await window.firebaseAddDoc(
+                        window.firebaseCollection(window.firebaseDb, 'teamMembers'), 
+                        memberData
+                    );
                 }
-            } else {
-                // Add new member
-                const newId = Math.max(...teamMembers.map(m => m.id), 0) + 1;
-                teamMembers.push({ ...memberData, id: newId });
-            }
 
-            renderTeamList();
-            updateMap();
-            closeModal();
+                closeModal();
+            } catch (error) {
+                console.error('Error saving member:', error);
+                showModalError('Error saving team member. Please try again.');
+            }
         });
 
         // Export data
@@ -699,7 +1016,7 @@
             const url = URL.createObjectURL(dataBlob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = 'team-members.json';
+            link.download = `team-members-${new Date().toISOString().split('T')[0]}.json`;
             link.click();
             URL.revokeObjectURL(url);
         }
