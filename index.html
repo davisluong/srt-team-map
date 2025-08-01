@@ -4,1317 +4,713 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SR&T Team Location Map</title>
+    <title>Team Location Map - Collaborative Platform</title>
+    
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        * {
             margin: 0;
             padding: 0;
-            background-color: #f5f5f5;
+            box-sizing: border-box;
         }
-        
-        .header {
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-height: 100vh;
         }
-        
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background: #3182ce;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #718096;
+        }
+
+        .btn-secondary:hover {
+            background: #4a5568;
+        }
+
         .container {
             display: flex;
             height: calc(100vh - 80px);
+            gap: 1rem;
+            padding: 1rem;
         }
-        
+
         .sidebar {
             width: 350px;
-            background: white;
-            padding: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1.5rem;
             overflow-y: auto;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
-        
-        .main-content {
+
+        .map-container {
             flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .tabs {
-            display: flex;
             background: white;
-            border-bottom: 1px solid #dee2e6;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
-        
-        .tab {
-            padding: 15px 25px;
-            background: #f8f9fa;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            color: #495057;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
-        }
-        
-        .tab.active {
-            background: white;
-            color: #667eea;
-            border-bottom-color: #667eea;
-        }
-        
-        .tab:hover:not(.active) {
-            background: #e9ecef;
-        }
-        
-        .tab-content {
-            flex: 1;
-            position: relative;
-        }
-        
-        .tab-pane {
-            display: none;
-            height: 100%;
-        }
-        
-        .tab-pane.active {
-            display: block;
-        }
-        
+
         #map {
             height: 100%;
             width: 100%;
         }
-        
-        .table-container {
-            height: 100%;
-            overflow: auto;
-            padding: 20px;
-            background: white;
-        }
-        
-        .team-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        
-        .team-table th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-        }
-        
-        .team-table td {
-            padding: 15px;
-            border-bottom: 1px solid #dee2e6;
-            vertical-align: top;
-        }
-        
-        .team-table tr:hover {
-            background-color: #f8f9fa;
-        }
-        
+
         .form-group {
-            margin-bottom: 15px;
-            position: relative;
+            margin-bottom: 1rem;
         }
-        
-        label {
+
+        .form-group label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 0.5rem;
             font-weight: 600;
-            color: #333;
+            color: #2d3748;
         }
-        
-        input, select, textarea {
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
             width: 100%;
-            padding: 10px;
-            border: 2px solid #e1e5e9;
+            padding: 0.75rem;
+            border: 2px solid #e2e8f0;
             border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-            box-sizing: border-box;
-            font-family: inherit;
+            font-size: 0.9rem;
+            transition: border-color 0.3s ease;
         }
-        
-        textarea {
-            resize: vertical;
-            min-height: 60px;
-        }
-        
-        input:focus, select:focus, textarea:focus {
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #4299e1;
         }
-        
-        .autocomplete-container {
-            position: relative;
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
         }
-        
-        .autocomplete-suggestions {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid #ddd;
-            border-top: none;
-            border-radius: 0 0 8px 8px;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 1000;
-            display: none;
-        }
-        
-        .autocomplete-suggestion {
-            padding: 10px;
-            cursor: pointer;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .autocomplete-suggestion:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 12px 20px;
-            border: none;
+
+        .team-member {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            width: 100%;
-            transition: transform 0.2s;
-            margin-bottom: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
         }
-        
-        .btn:hover:not(:disabled) {
+
+        .team-member:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             transform: translateY(-2px);
         }
-        
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
+
+        .member-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
         }
-        
-        .btn-secondary {
-            background: #6c757d;
-            margin-bottom: 5px;
+
+        .member-name {
+            font-weight: bold;
+            color: #2d3748;
+            font-size: 1.1rem;
         }
-        
-        .btn-secondary:hover:not(:disabled) {
-            background: #545b62;
+
+        .member-role {
+            color: #4299e1;
+            font-size: 0.9rem;
+            font-weight: 500;
         }
-        
-        .btn-small {
-            padding: 5px 10px;
-            font-size: 12px;
-            width: auto;
-            margin: 2px;
-        }
-        
-        .btn-edit {
-            background: #ffc107;
-            color: #212529;
-        }
-        
-        .btn-toggle {
-            background: #28a745;
-            margin-bottom: 10px;
-        }
-        
-        .btn-toggle.inactive {
-            background: #dc3545;
-        }
-        
-        .btn-delete {
-            background: #dc3545;
-            color: white;
-            padding: 5px 10px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            float: right;
-            margin-top: 5px;
-        }
-        
-        .team-member {
-            background: #f8f9fa;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-            position: relative;
-        }
-        
-        .team-member h4 {
-            margin: 0 0 10px 0;
-            color: #333;
-            padding-right: 100px;
-        }
-        
-        .location-info {
-            font-size: 12px;
-            color: #666;
-            margin: 5px 0;
-        }
-        
-        .member-note {
-            font-size: 12px;
-            color: #555;
-            margin: 8px 0;
-            padding: 8px;
-            background: #e9ecef;
-            border-radius: 4px;
-            font-style: italic;
-        }
-        
+
         .member-actions {
-            position: absolute;
-            top: 10px;
-            right: 10px;
+            display: flex;
+            gap: 0.5rem;
         }
-        
-        .legend {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: white;
-            padding: 15px;
+
+        .btn-small {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+            border-radius: 4px;
+        }
+
+        .btn-edit {
+            background: #ed8936;
+        }
+
+        .btn-edit:hover {
+            background: #dd6b20;
+        }
+
+        .btn-delete {
+            background: #e53e3e;
+        }
+
+        .btn-delete:hover {
+            background: #c53030;
+        }
+
+        .member-info {
+            font-size: 0.9rem;
+            color: #4a5568;
+            line-height: 1.4;
+        }
+
+        .toggle-container {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 1rem;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            z-index: 1000;
+            margin-bottom: 1rem;
         }
-        
-        .legend-item {
+
+        .toggle-switch {
             display: flex;
             align-items: center;
-            margin-bottom: 8px;
+            gap: 0.5rem;
+            cursor: pointer;
         }
-        
-        .legend-color {
-            width: 12px;
-            height: 12px;
+
+        .switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: #cbd5e0;
+            border-radius: 12px;
+            transition: background 0.3s ease;
+        }
+
+        .switch.active {
+            background: #4299e1;
+        }
+
+        .switch::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
-            margin-right: 8px;
+            background: white;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s ease;
         }
-        
-        .current { background-color: #28a745; }
-        .birthplace { background-color: #dc3545; }
-        
-        .error {
-            color: #dc3545;
-            font-size: 12px;
-            margin-top: 5px;
+
+        .switch.active::before {
+            transform: translateX(26px);
         }
-        
-        .success {
-            color: #28a745;
-            font-size: 12px;
-            margin-top: 5px;
-        }
-        
-        .loading {
-            color: #667eea;
-            font-size: 12px;
-            margin-top: 5px;
-        }
-        
-        .data-controls {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #e9ecef;
-            border-radius: 8px;
-        }
-        
-        .data-controls h4 {
-            margin: 0 0 10px 0;
-            color: #333;
-        }
-        
-        .auto-save-status {
-            font-size: 11px;
-            color: #666;
-            margin-top: 5px;
-        }
-        
-        .toggle-controls {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #dee2e6;
-        }
-        
-        .toggle-controls h4 {
-            margin: 0 0 10px 0;
-            color: #333;
-        }
-        
-        .firebase-controls {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #d4edda;
-            border-radius: 8px;
-            border: 1px solid #c3e6cb;
-        }
-        
-        .firebase-controls h4 {
-            margin: 0 0 10px 0;
-            color: #155724;
-        }
-        
-        .firebase-status {
-            font-size: 12px;
-            color: #155724;
-            margin-top: 5px;
-        }
-        
+
         .modal {
             display: none;
             position: fixed;
-            z-index: 2000;
-            left: 0;
             top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
         }
-        
+
         .modal-content {
-            background-color: white;
-            margin: 5% auto;
-            padding: 20px;
-            border-radius: 8px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
             width: 90%;
             max-width: 500px;
-            max-height: 80vh;
+            max-height: 90vh;
             overflow-y: auto;
         }
-        
+
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 1.5rem;
         }
-        
-        .modal-close {
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        .close-btn {
             background: none;
             border: none;
-            font-size: 24px;
+            font-size: 1.5rem;
             cursor: pointer;
-            color: #666;
+            color: #718096;
+        }
+
+        .close-btn:hover {
+            color: #2d3748;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: 300px;
+            }
+            
+            .map-container {
+                height: 400px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🌍 SR&T Team Location Map</h1>
-        <p>Real-time collaborative team location mapping</p>
+        <div class="logo">
+            <i class="fas fa-globe-americas"></i>
+            Team Location Map
+        </div>
+        <div class="controls">
+            <button class="btn" onclick="openAddModal()">
+                <i class="fas fa-plus"></i>
+                Add Team Member
+            </button>
+            <button class="btn btn-secondary" onclick="exportData()">
+                <i class="fas fa-download"></i>
+                Export Data
+            </button>
+        </div>
     </div>
-    
+
     <div class="container">
         <div class="sidebar">
-            <div class="firebase-controls">
-                <h4>🔥 Firebase Status</h4>
-                <div class="firebase-status" id="firebaseStatus">Ready for GitHub Pages deployment</div>
+            <div class="toggle-container">
+                <div class="toggle-switch" onclick="toggleConnections()">
+                    <div class="switch" id="connectionToggle"></div>
+                    <span>Show Connection Lines</span>
+                </div>
+            </div>
+
+            <div class="section-title">
+                <i class="fas fa-users"></i>
+                Team Members
             </div>
             
-            <div class="toggle-controls">
-                <h4>🎛️ Map Controls</h4>
-                <button class="btn btn-toggle" id="birthplaceToggle" onclick="toggleBirthplaces()">
-                    <span id="birthplaceToggleText">Hide Birthplaces</span>
-                </button>
+            <div id="teamList">
+                <!-- Team members will be populated here -->
             </div>
-            
-            <div class="data-controls">
-                <h4>💾 Data Management</h4>
-                <button class="btn btn-secondary" onclick="exportData()">Export Data</button>
-                <button class="btn btn-secondary" onclick="importData()">Import Data</button>
-                <button class="btn btn-secondary" onclick="clearAllData()">Clear All</button>
-                <div class="auto-save-status" id="autoSaveStatus">Ready to add team members</div>
-            </div>
-            
-            <h3>Add Team Member</h3>
-            <div id="teamForm">
-                <div class="form-group">
-                    <label for="name">Name:</label>
-                    <input type="text" id="name" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="role">Role:</label>
-                    <input type="text" id="role" placeholder="e.g., Software Engineer">
-                </div>
-                
-                <div class="form-group">
-                    <label for="currentCity">Current City:</label>
-                    <div class="autocomplete-container">
-                        <input type="text" id="currentCity" placeholder="Start typing city name..." required>
-                        <div id="currentCitySuggestions" class="autocomplete-suggestions"></div>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="birthCity">Birth Place:</label>
-                    <div class="autocomplete-container">
-                        <input type="text" id="birthCity" placeholder="Start typing city name..." required>
-                        <div id="birthCitySuggestions" class="autocomplete-suggestions"></div>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="notes">Notes (optional):</label>
-                    <textarea id="notes" placeholder="Add any additional notes about this team member..."></textarea>
-                </div>
-                
-                <button class="btn" id="addBtn" onclick="handleAddTeamMember()">Add Team Member</button>
-                <div id="status"></div>
-            </div>
-            
-            <h3 style="margin-top: 30px;">Team Members (<span id="teamCount">0</span>)</h3>
-            
-            <div id="teamList"></div>
         </div>
-        
-        <div class="main-content">
-            <div class="tabs">
-                <button class="tab active" onclick="switchTab('map')">🗺️ Map View</button>
-                <button class="tab" onclick="switchTab('table')">📋 Team List</button>
-            </div>
-            
-            <div class="tab-content">
-                <div id="mapTab" class="tab-pane active">
-                    <div id="map"></div>
-                    <div class="legend">
-                        <h4 style="margin: 0 0 10px 0;">Legend</h4>
-                        <div class="legend-item">
-                            <div class="legend-color current"></div>
-                            <span>Current Location</span>
-                        </div>
-                        <div class="legend-item" id="birthplaceLegend">
-                            <div class="legend-color birthplace"></div>
-                            <span>Birthplace</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="tableTab" class="tab-pane">
-                    <div class="table-container">
-                        <h2>Team Members List</h2>
-                        <table class="team-table" id="teamTable">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Role</th>
-                                    <th>Current City</th>
-                                    <th>Birth Place</th>
-                                    <th>Notes</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="teamTableBody">
-                                <!-- Team members will be populated here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+
+        <div class="map-container">
+            <div id="map"></div>
         </div>
     </div>
 
-    <!-- Edit Modal -->
-    <div id="editModal" class="modal">
+    <!-- Add/Edit Modal -->
+    <div id="memberModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Edit Team Member</h3>
-                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+                <div class="modal-title" id="modalTitle">Add Team Member</div>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
             </div>
-            <div id="editForm">
+            
+            <form id="memberForm">
                 <div class="form-group">
-                    <label for="editName">Name:</label>
-                    <input type="text" id="editName" required>
+                    <label for="memberName">Name *</label>
+                    <input type="text" id="memberName" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="editRole">Role:</label>
-                    <input type="text" id="editRole" placeholder="e.g., Software Engineer">
+                    <label for="memberRole">Role *</label>
+                    <input type="text" id="memberRole" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="editCurrentCity">Current City:</label>
-                    <div class="autocomplete-container">
-                        <input type="text" id="editCurrentCity" placeholder="Start typing city name..." required>
-                        <div id="editCurrentCitySuggestions" class="autocomplete-suggestions"></div>
-                    </div>
+                    <label for="currentLocation">Current Location *</label>
+                    <input type="text" id="currentLocation" placeholder="e.g., New York, USA" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="editBirthCity">Birth Place:</label>
-                    <div class="autocomplete-container">
-                        <input type="text" id="editBirthCity" placeholder="Start typing city name..." required>
-                        <div id="editBirthCitySuggestions" class="autocomplete-suggestions"></div>
-                    </div>
+                    <label for="birthPlace">Birth Place *</label>
+                    <input type="text" id="birthPlace" placeholder="e.g., London, UK" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="editNotes">Notes (optional):</label>
-                    <textarea id="editNotes" placeholder="Add any additional notes about this team member..."></textarea>
+                    <label for="memberNotes">Notes</label>
+                    <textarea id="memberNotes" placeholder="Additional information about the team member..."></textarea>
                 </div>
                 
-                <button class="btn" id="saveEditBtn" onclick="saveEdit()">Save Changes</button>
-                <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
-                <div id="editStatus"></div>
-            </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn">
+                        <i class="fas fa-save"></i>
+                        Save Member
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
+    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     
     <script>
         // Global variables
-        let map = null;
+        let map;
         let teamMembers = [];
-        let memberMarkers = new Map();
-        let showBirthplaces = true;
-        let editingMemberId = null;
-        
-        // Firebase variables (will be configured after deployment)
-        let firebaseApp = null;
-        let database = null;
-        let isFirebaseConnected = false;
+        let currentEditId = null;
+        let showConnections = false;
+        let markers = [];
+        let connectionLines = [];
 
         // Initialize the application
-        function initializeApp() {
-            console.log('Initializing SR&T Team Location Map...');
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMap();
+            loadSampleData();
+            renderTeamList();
+            updateMap();
+        });
+
+        // Initialize the map
+        function initializeMap() {
+            map = L.map('map').setView([20, 0], 2);
             
-            // Initialize map
-            if (!map) {
-                map = L.map('map').setView([20, 0], 2);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap contributors'
-                }).addTo(map);
-                console.log('Map initialized');
-            }
-
-            // Setup autocomplete
-            setupAutocomplete('currentCity', 'currentCitySuggestions');
-            setupAutocomplete('birthCity', 'birthCitySuggestions');
-            setupAutocomplete('editCurrentCity', 'editCurrentCitySuggestions');
-            setupAutocomplete('editBirthCity', 'editBirthCitySuggestions');
-
-            // Try to initialize Firebase (will work after deployment)
-            initializeFirebase();
-
-            console.log('App initialization complete');
-        }
-
-        // Firebase initialization (will be configured with your Firebase config)
-        function initializeFirebase() {
-            // TODO: Replace with your Firebase config after deployment
-            const firebaseConfig = {
-                // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-                  apiKey: "AIzaSyCgEh2UhEZFCFtn_2h_scIA8YHYTPHPy2M",
-                  authDomain: "srt-team-map.firebaseapp.com",
-                  databaseURL: "https://srt-team-map-default-rtdb.firebaseio.com",
-                  projectId: "srt-team-map",
-                  storageBucket: "srt-team-map.firebasestorage.app",
-                  messagingSenderId: "1041786833700",
-                  appId: "1:1041786833700:web:66bed6ec42cc8eb75d81b1",
-                  measurementId: "G-4TRCZJ2Q2L"
-            };
-
-            try {
-                // Only initialize if config is properly set
-                if (firebaseConfig.apiKey !== "your-api-key") {
-                    firebaseApp = firebase.initializeApp(firebaseConfig);
-                    database = firebase.database();
-                    
-                    database.ref('.info/connected').on('value', function(snapshot) {
-                        if (snapshot.val() === true) {
-                            isFirebaseConnected = true;
-                            setupFirebaseListeners();
-                            document.getElementById('firebaseStatus').textContent = 'Connected to Firebase - Real-time sync enabled';
-                            loadFromFirebase();
-                        } else {
-                            isFirebaseConnected = false;
-                            document.getElementById('firebaseStatus').textContent = 'Disconnected from Firebase';
-                        }
-                    });
-                } else {
-                    document.getElementById('firebaseStatus').textContent = 'Firebase config needed - using local storage';
-                    loadFromLocalStorage();
-                }
-            } catch (error) {
-                console.error('Firebase initialization error:', error);
-                document.getElementById('firebaseStatus').textContent = 'Firebase error - using local storage';
-                loadFromLocalStorage();
-            }
-        }
-
-        function setupFirebaseListeners() {
-            if (!database) return;
-
-            database.ref('teamMembers').on('value', function(snapshot) {
-                const data = snapshot.val();
-                if (data) {
-                    teamMembers = Object.values(data);
-                    updateAllMarkers();
-                    updateTeamList();
-                    updateTeamTable();
-                    document.getElementById('autoSaveStatus').textContent = `Synced ${teamMembers.length} team members from Firebase`;
-                }
-            });
-
-            database.ref('settings').on('value', function(snapshot) {
-                const settings = snapshot.val();
-                if (settings && settings.showBirthplaces !== undefined) {
-                    showBirthplaces = settings.showBirthplaces;
-                    updateToggleUI();
-                    updateAllMarkers();
-                }
-            });
-        }
-
-        function saveToFirebase() {
-            if (!isFirebaseConnected || !database) {
-                return saveToLocalStorage();
-            }
-
-            try {
-                const teamData = {};
-                teamMembers.forEach(member => {
-                    teamData[member.id] = member;
-                });
-                database.ref('teamMembers').set(teamData);
-                database.ref('settings').set({ showBirthplaces: showBirthplaces });
-                document.getElementById('autoSaveStatus').textContent = `Synced to Firebase at ${new Date().toLocaleTimeString()}`;
-            } catch (error) {
-                console.error('Firebase save error:', error);
-                saveToLocalStorage();
-            }
-        }
-
-        function loadFromFirebase() {
-            if (!isFirebaseConnected || !database) {
-                return loadFromLocalStorage();
-            }
-            document.getElementById('autoSaveStatus').textContent = 'Loading from Firebase...';
-        }
-
-        function saveToLocalStorage() {
-            try {
-                localStorage.setItem('teamLocationData', JSON.stringify(teamMembers));
-                localStorage.setItem('showBirthplaces', JSON.stringify(showBirthplaces));
-                document.getElementById('autoSaveStatus').textContent = `Auto-saved locally at ${new Date().toLocaleTimeString()}`;
-            } catch (error) {
-                console.error('Error saving to localStorage:', error);
-            }
-        }
-
-        function loadFromLocalStorage() {
-            try {
-                const saved = localStorage.getItem('teamLocationData');
-                if (saved && saved !== 'null') {
-                    const data = JSON.parse(saved);
-                    if (Array.isArray(data)) {
-                        teamMembers = data;
-                        updateTeamList();
-                        updateAllMarkers();
-                        document.getElementById('autoSaveStatus').textContent = `Loaded ${data.length} team members from local storage`;
-                    }
-                }
-
-                const toggleState = localStorage.getItem('showBirthplaces');
-                if (toggleState !== null) {
-                    showBirthplaces = JSON.parse(toggleState);
-                    updateToggleUI();
-                }
-            } catch (error) {
-                console.error('Error loading from localStorage:', error);
-            }
-        }
-
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
-
-            event.target.classList.add('active');
-            document.getElementById(tabName + 'Tab').classList.add('active');
-
-            if (tabName === 'map' && map) {
-                setTimeout(() => map.invalidateSize(), 100);
-            }
-            if (tabName === 'table') {
-                updateTeamTable();
-            }
-        }
-
-        function updateTeamTable() {
-            const tbody = document.getElementById('teamTableBody');
-            tbody.innerHTML = '';
-
-            teamMembers.forEach(member => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${member.name}</td>
-                    <td>${member.role}</td>
-                    <td>${member.currentCity}</td>
-                    <td>${member.birthCity}</td>
-                    <td style="max-width: 200px; word-wrap: break-word;">${member.notes || '-'}</td>
-                    <td>
-                        <button class="btn btn-edit btn-small" onclick="editTeamMember(${member.id})">Edit</button>
-                        <button class="btn btn-delete btn-small" onclick="deleteTeamMember(${member.id})">Delete</button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        function toggleBirthplaces() {
-            showBirthplaces = !showBirthplaces;
-            updateToggleUI();
-            updateAllMarkers();
-            saveToFirebase();
-        }
-
-        function updateToggleUI() {
-            const toggleBtn = document.getElementById('birthplaceToggle');
-            const toggleText = document.getElementById('birthplaceToggleText');
-            const birthplaceLegend = document.getElementById('birthplaceLegend');
-
-            if (showBirthplaces) {
-                toggleBtn.classList.remove('inactive');
-                toggleText.textContent = 'Hide Birthplaces';
-                birthplaceLegend.style.display = 'flex';
-            } else {
-                toggleBtn.classList.add('inactive');
-                toggleText.textContent = 'Show Birthplaces';
-                birthplaceLegend.style.display = 'none';
-            }
-        }
-
-        function updateAllMarkers() {
-            memberMarkers.forEach(markers => {
-                markers.forEach(marker => map.removeLayer(marker));
-            });
-            memberMarkers.clear();
-
-            teamMembers.forEach(member => {
-                addMarkersForMember(member);
-            });
-        }
-
-        async function handleAddTeamMember() {
-            const name = document.getElementById('name').value.trim();
-            const role = document.getElementById('role').value.trim();
-            const currentCity = document.getElementById('currentCity').value.trim();
-            const birthCity = document.getElementById('birthCity').value.trim();
-            const notes = document.getElementById('notes').value.trim();
-
-            if (!name || !currentCity || !birthCity) {
-                document.getElementById('status').innerHTML = '<div class="error">Please fill in all required fields</div>';
-                return;
-            }
-
-            await addTeamMember(name, role, currentCity, birthCity, notes);
-        }
-
-        async function addTeamMember(name, role, currentCity, birthCity, notes) {
-            const statusDiv = document.getElementById('status');
-            const addBtn = document.getElementById('addBtn');
-
-            statusDiv.innerHTML = '<div class="loading">Adding team member...</div>';
-            addBtn.disabled = true;
-
-            try {
-                const currentInput = document.getElementById('currentCity');
-                const birthInput = document.getElementById('birthCity');
-
-                let currentLocation, birthLocation;
-
-                if (currentInput.dataset.lat && currentInput.dataset.lng) {
-                    currentLocation = {
-                        lat: parseFloat(currentInput.dataset.lat),
-                        lng: parseFloat(currentInput.dataset.lng),
-                        display_name: currentCity
-                    };
-                } else {
-                    currentLocation = await geocodeCity(currentCity);
-                }
-
-                if (birthInput.dataset.lat && birthInput.dataset.lng) {
-                    birthLocation = {
-                        lat: parseFloat(birthInput.dataset.lat),
-                        lng: parseFloat(birthInput.dataset.lng),
-                        display_name: birthCity
-                    };
-                } else {
-                    birthLocation = await geocodeCity(birthCity);
-                }
-
-                if (!currentLocation) {
-                    statusDiv.innerHTML = `<div class="error">Could not find location: ${currentCity}</div>`;
-                    addBtn.disabled = false;
-                    return;
-                }
-
-                if (!birthLocation) {
-                    statusDiv.innerHTML = `<div class="error">Could not find location: ${birthCity}</div>`;
-                    addBtn.disabled = false;
-                    return;
-                }
-
-                const member = {
-                    id: Date.now(),
-                    name,
-                    role: role || 'Team Member',
-                    currentCity,
-                    birthCity,
-                    notes: notes || '',
-                    currentLocation,
-                    birthLocation
-                };
-
-                teamMembers.push(member);
-                addMarkersForMember(member);
-                updateTeamList();
-                updateTeamTable();
-                saveToFirebase();
-
-                // Clear form
-                document.getElementById('name').value = '';
-                document.getElementById('role').value = '';
-                document.getElementById('currentCity').value = '';
-                document.getElementById('birthCity').value = '';
-                document.getElementById('notes').value = '';
-                delete currentInput.dataset.lat;
-                delete current Input.dataset.lng;
-                delete birthInput.dataset.lat;
-                delete birthInput.dataset.lng;
-
-                statusDiv.innerHTML = '<div class="success">Team member added successfully!</div>';
-                setTimeout(() => statusDiv.innerHTML = '', 3000);
-
-            } catch (error) {
-                statusDiv.innerHTML = '<div class="error">Error adding team member. Please try again.</div>';
-                console.error('Error adding team member:', error);
-            }
-
-            addBtn.disabled = false;
-        }
-
-        function addMarkersForMember(member) {
-            const markers = [];
-
-            // Current location marker (green)
-            const currentMarker = L.circleMarker([member.currentLocation.lat, member.currentLocation.lng], {
-                color: '#28a745',
-                fillColor: '#28a745',
-                fillOpacity: 0.8,
-                radius: 8
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
             }).addTo(map);
+        }
 
-            let popupContent = `
-                <strong>${member.name}</strong><br>
-                <em>${member.role}</em><br>
-                📍 Current: ${member.currentCity}
-            `;
-
-            if (member.notes) {
-                popupContent += `<br><br><strong>Notes:</strong><br>${member.notes}`;
-            }
-
-            currentMarker.bindPopup(popupContent);
-            markers.push(currentMarker);
-
-            // Birth location marker and line (only if toggle is on)
-            if (showBirthplaces) {
-                const birthMarker = L.circleMarker([member.birthLocation.lat, member.birthLocation.lng], {
-                    color: '#dc3545',
-                    fillColor: '#dc3545',
-                    fillOpacity: 0.8,
-                    radius: 8
-                }).addTo(map);
-
-                let birthPopupContent = `
-                    <strong>${member.name}</strong><br>
-                    <em>${member.role}</em><br>
-                    🏠 Born in: ${member.birthCity}
-                `;
-
-                if (member.notes) {
-                    birthPopupContent += `<br><br><strong>Notes:</strong><br>${member.notes}`;
+        // Load sample data
+        function loadSampleData() {
+            teamMembers = [
+                {
+                    id: 1,
+                    name: "Sarah Johnson",
+                    role: "Frontend Developer",
+                    currentLocation: "Toronto, Canada",
+                    birthPlace: "Vancouver, Canada",
+                    notes: "Specializes in React and Vue.js. Loves hiking and photography.",
+                    currentCoords: [43.6532, -79.3832],
+                    birthCoords: [49.2827, -123.1207]
+                },
+                {
+                    id: 2,
+                    name: "Miguel Rodriguez",
+                    role: "Backend Engineer",
+                    currentLocation: "Mexico City, Mexico",
+                    birthPlace: "Guadalajara, Mexico",
+                    notes: "Expert in Node.js and Python. Passionate about AI and machine learning.",
+                    currentCoords: [19.4326, -99.1332],
+                    birthCoords: [20.6597, -103.3496]
+                },
+                {
+                    id: 3,
+                    name: "Priya Patel",
+                    role: "UX Designer",
+                    currentLocation: "London, UK",
+                    birthPlace: "Mumbai, India",
+                    notes: "Creative designer with 5+ years experience. Loves user research and prototyping.",
+                    currentCoords: [51.5074, -0.1278],
+                    birthCoords: [19.0760, 72.8777]
                 }
-
-                birthMarker.bindPopup(birthPopupContent);
-                markers.push(birthMarker);
-
-                // Connect with a line if different locations
-                if (member.currentLocation.lat !== member.birthLocation.lat || 
-                    member.currentLocation.lng !== member.birthLocation.lng) {
-                    const line = L.polyline([
-                        [member.birthLocation.lat, member.birthLocation.lng],
-                        [member.currentLocation.lat, member.currentLocation.lng]
-                    ], {
-                        color: '#6c757d',
-                        weight: 2,
-                        opacity: 0.6,
-                        dashArray: '5, 5'
-                    }).addTo(map);
-
-                    markers.push(line);
-                }
-            }
-
-            memberMarkers.set(member.id, markers);
+            ];
         }
 
-        function editTeamMember(memberId) {
-            const member = teamMembers.find(m => m.id === memberId);
-            if (!member) return;
-
-            editingMemberId = memberId;
-
-            document.getElementById('editName').value = member.name;
-            document.getElementById('editRole').value = member.role;
-            document.getElementById('editCurrentCity').value = member.currentCity;
-            document.getElementById('editBirthCity').value = member.birthCity;
-            document.getElementById('editNotes').value = member.notes || '';
-
-            const editCurrentInput = document.getElementById('editCurrentCity');
-            const editBirthInput = document.getElementById('editBirthCity');
-            editCurrentInput.dataset.lat = member.currentLocation.lat;
-            editCurrentInput.dataset.lng = member.currentLocation.lng;
-            editBirthInput.dataset.lat = member.birthLocation.lat;
-            editBirthInput.dataset.lng = member.birthLocation.lng;
-
-            document.getElementById('editModal').style.display = 'block';
+        // Geocoding function (simplified - in production use a proper geocoding service)
+        async function geocodeLocation(location) {
+            // This is a simplified geocoding function
+            // In a real application, you'd use a proper geocoding service like Google Maps API
+            const geocodeData = {
+                "Toronto, Canada": [43.6532, -79.3832],
+                "Vancouver, Canada": [49.2827, -123.1207],
+                "Mexico City, Mexico": [19.4326, -99.1332],
+                "Guadalajara, Mexico": [20.6597, -103.3496],
+                "London, UK": [51.5074, -0.1278],
+                "Mumbai, India": [19.0760, 72.8777],
+                "New York, USA": [40.7128, -74.0060],
+                "Los Angeles, USA": [34.0522, -118.2437],
+                "Paris, France": [48.8566, 2.3522],
+                "Berlin, Germany": [52.5200, 13.4050],
+                "Tokyo, Japan": [35.6762, 139.6503],
+                "Sydney, Australia": [-33.8688, 151.2093]
+            };
+            
+            return geocodeData[location] || [0, 0];
         }
 
-        function closeEditModal() {
-            document.getElementById('editModal').style.display = 'none';
-            editingMemberId = null;
-            document.getElementById('editStatus').innerHTML = '';
-        }
+        // Render team list
+        function renderTeamList() {
+            const teamList = document.getElementById('teamList');
+            teamList.innerHTML = '';
 
-        async function saveEdit() {
-            if (!editingMemberId) return;
-
-            const statusDiv = document.getElementById('editStatus');
-            const saveBtn = document.getElementById('saveEditBtn');
-
-            const name = document.getElementById('editName').value.trim();
-            const role = document.getElementById('editRole').value.trim();
-            const currentCity = document.getElementById('editCurrentCity').value.trim();
-            const birthCity = document.getElementById('editBirthCity').value.trim();
-            const notes = document.getElementById('editNotes').value.trim();
-
-            if (!name || !currentCity || !birthCity) {
-                statusDiv.innerHTML = '<div class="error">Please fill in all required fields</div>';
+            if (teamMembers.length === 0) {
+                teamList.innerHTML = '<p style="text-align: center; color: #718096; font-style: italic;">No team members added yet.</p>';
                 return;
             }
-
-            statusDiv.innerHTML = '<div class="loading">Saving changes...</div>';
-            saveBtn.disabled = true;
-
-            try {
-                const editCurrentInput = document.getElementById('editCurrentCity');
-                const editBirthInput = document.getElementById('editBirthCity');
-
-                let currentLocation, birthLocation;
-
-                if (editCurrentInput.dataset.lat && editCurrentInput.dataset.lng) {
-                    currentLocation = {
-                        lat: parseFloat(editCurrentInput.dataset.lat),
-                        lng: parseFloat(editCurrentInput.dataset.lng),
-                        display_name: currentCity
-                    };
-                } else {
-                    currentLocation = await geocodeCity(currentCity);
-                }
-
-                if (editBirthInput.dataset.lat && editBirthInput.dataset.lng) {
-                    birthLocation = {
-                        lat: parseFloat(editBirthInput.dataset.lat),
-                        lng: parseFloat(editBirthInput.dataset.lng),
-                        display_name: birthCity
-                    };
-                } else {
-                    birthLocation = await geocodeCity(birthCity);
-                }
-
-                if (!currentLocation) {
-                    statusDiv.innerHTML = `<div class="error">Could not find location: ${currentCity}</div>`;
-                    saveBtn.disabled = false;
-                    return;
-                }
-
-                if (!birthLocation) {
-                    statusDiv.innerHTML = `<div class="error">Could not find location: ${birthCity}</div>`;
-                    saveBtn.disabled = false;
-                    return;
-                }
-
-                const memberIndex = teamMembers.findIndex(m => m.id === editingMemberId);
-                if (memberIndex !== -1) {
-                    const oldMarkers = memberMarkers.get(editingMemberId);
-                    if (oldMarkers) {
-                        oldMarkers.forEach(marker => map.removeLayer(marker));
-                        memberMarkers.delete(editingMemberId);
-                    }
-
-                    teamMembers[memberIndex] = {
-                        id: editingMemberId,
-                        name,
-                        role: role || 'Team Member',
-                        currentCity,
-                        birthCity,
-                        notes: notes || '',
-                        currentLocation,
-                        birthLocation
-                    };
-
-                    addMarkersForMember(teamMembers[memberIndex]);
-                    updateTeamList();
-                    updateTeamTable();
-                    saveToFirebase();
-
-                    statusDiv.innerHTML = '<div class="success">Changes saved successfully!</div>';
-                    setTimeout(() => closeEditModal(), 1500);
-                }
-
-            } catch (error) {
-                statusDiv.innerHTML = '<div class="error">Error saving changes. Please try again.</div>';
-                console.error('Error saving edit:', error);
-            }
-
-            saveBtn.disabled = false;
-        }
-
-        function deleteTeamMember(memberId) {
-            if (confirm('Are you sure you want to delete this team member?')) {
-                const markers = memberMarkers.get(memberId);
-                if (markers) {
-                    markers.forEach(marker => map.removeLayer(marker));
-                    memberMarkers.delete(memberId);
-                }
-
-                teamMembers = teamMembers.filter(member => member.id !== memberId);
-                updateTeamList();
-                updateTeamTable();
-                saveToFirebase();
-            }
-        }
-
-        function updateTeamList() {
-            const teamList = document.getElementById('teamList');
-            const teamCount = document.getElementById('teamCount');
-
-            teamList.innerHTML = '';
-            teamCount.textContent = teamMembers.length;
 
             teamMembers.forEach(member => {
                 const memberDiv = document.createElement('div');
                 memberDiv.className = 'team-member';
-
-                let memberHTML = `
-                    <div class="member-actions">
-                        <button class="btn btn-edit btn-small" onclick="editTeamMember(${member.id})" title="Edit team member">✏️</button>
-                        <button class="btn-delete" onclick="deleteTeamMember(${member.id})" title="Delete team member">×</button>
+                memberDiv.innerHTML = `
+                    <div class="member-header">
+                        <div>
+                            <div class="member-name">${member.name}</div>
+                            <div class="member-role">${member.role}</div>
+                        </div>
+                        <div class="member-actions">
+                            <button class="btn btn-small btn-edit" onclick="editMember(${member.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-small btn-delete" onclick="deleteMember(${member.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </div>
-                    <h4>${member.name}</h4>
-                    <div class="location-info">📍 Current: ${member.currentCity}</div>
-                    <div class="location-info">🏠 Born: ${member.birthCity}</div>
-                    <div class="location-info">💼 ${member.role}</div>
+                    <div class="member-info">
+                        <div><strong>Current:</strong> ${member.currentLocation}</div>
+                        <div><strong>Born:</strong> ${member.birthPlace}</div>
+                        ${member.notes ? `<div><strong>Notes:</strong> ${member.notes}</div>` : ''}
+                    </div>
                 `;
-
-                if (member.notes) {
-                    memberHTML += `<div class="member-note">📝 ${member.notes}</div>`;
-                }
-
-                memberDiv.innerHTML = memberHTML;
                 teamList.appendChild(memberDiv);
             });
         }
 
+        // Update map with markers and connections
+        function updateMap() {
+            // Clear existing markers and lines
+            markers.forEach(marker => map.removeLayer(marker));
+            connectionLines.forEach(line => map.removeLayer(line));
+            markers = [];
+            connectionLines = [];
+
+            // Add markers for each team member
+            teamMembers.forEach(member => {
+                if (member.currentCoords && member.birthCoords) {
+                    // Current location marker (blue)
+                    const currentMarker = L.marker(member.currentCoords)
+                        .addTo(map)
+                        .bindPopup(`
+                            <div style="text-align: center;">
+                                <strong>${member.name}</strong><br>
+                                <em>${member.role}</em><br>
+                                <small>Current Location</small>
+                            </div>
+                        `);
+                    markers.push(currentMarker);
+
+                    // Birth place marker (green)
+                    const birthMarker = L.marker(member.birthCoords, {
+                        icon: L.icon({
+                            iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="green" width="25" height="41">
+                                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                                </svg>
+                            `),
+                            iconSize: [25, 41],
+                            iconAnchor: [12, 41],
+                            popupAnchor: [1, -34]
+                        })
+                    })
+                        .addTo(map)
+                        .bindPopup(`
+                            <div style="text-align: center;">
+                                <strong>${member.name}</strong><br>
+                                <em>${member.role}</em><br>
+                                <small>Birth Place</small>
+                            </div>
+                        `);
+                    markers.push(birthMarker);
+
+                    // Connection line (if enabled)
+                    if (showConnections) {
+                        const connectionLine = L.polyline([member.currentCoords, member.birthCoords], {
+                            color: '#4299e1',
+                            weight: 2,
+                            opacity: 0.7,
+                            dashArray: '10, 10'
+                        }).addTo(map);
+                        connectionLines.push(connectionLine);
+                    }
+                }
+            });
+        }
+
+        // Toggle connection lines
+        function toggleConnections() {
+            showConnections = !showConnections;
+            const toggle = document.getElementById('connectionToggle');
+            
+            if (showConnections) {
+                toggle.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
+            }
+            
+            updateMap();
+        }
+
+        // Open add modal
+        function openAddModal() {
+            currentEditId = null;
+            document.getElementById('modalTitle').textContent = 'Add Team Member';
+            document.getElementById('memberForm').reset();
+            document.getElementById('memberModal').style.display = 'block';
+        }
+
+        // Edit member
+        function editMember(id) {
+            const member = teamMembers.find(m => m.id === id);
+            if (!member) return;
+
+            currentEditId = id;
+            document.getElementById('modalTitle').textContent = 'Edit Team Member';
+            document.getElementById('memberName').value = member.name;
+            document.getElementById('memberRole').value = member.role;
+            document.getElementById('currentLocation').value = member.currentLocation;
+            document.getElementById('birthPlace').value = member.birthPlace;
+            document.getElementById('memberNotes').value = member.notes || '';
+            document.getElementById('memberModal').style.display = 'block';
+        }
+
+        // Delete member
+        function deleteMember(id) {
+            if (confirm('Are you sure you want to delete this team member?')) {
+                teamMembers = teamMembers.filter(m => m.id !== id);
+                renderTeamList();
+                updateMap();
+            }
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('memberModal').style.display = 'none';
+            currentEditId = null;
+        }
+
+        // Handle form submission
+        document.getElementById('memberForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('memberName').value;
+            const role = document.getElementById('memberRole').value;
+            const currentLocation = document.getElementById('currentLocation').value;
+            const birthPlace = document.getElementById('birthPlace').value;
+            const notes = document.getElementById('memberNotes').value;
+
+            // Geocode locations
+            const currentCoords = await geocodeLocation(currentLocation);
+            const birthCoords = await geocodeLocation(birthPlace);
+
+            const memberData = {
+                name,
+                role,
+                currentLocation,
+                birthPlace,
+                notes,
+                currentCoords,
+                birthCoords
+            };
+
+            if (currentEditId) {
+                // Edit existing member
+                const index = teamMembers.findIndex(m => m.id === currentEditId);
+                if (index !== -1) {
+                    teamMembers[index] = { ...memberData, id: currentEditId };
+                }
+            } else {
+                // Add new member
+                const newId = Math.max(...teamMembers.map(m => m.id), 0) + 1;
+                teamMembers.push({ ...memberData, id: newId });
+            }
+
+            renderTeamList();
+            updateMap();
+            closeModal();
+        });
+
+        // Export data
         function exportData() {
             const dataStr = JSON.stringify(teamMembers, null, 2);
-            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(dataBlob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `srt-team-locations-${new Date().toISOString().split('T')[0]}.json`;
+            link.download = 'team-members.json';
             link.click();
             URL.revokeObjectURL(url);
         }
 
-        function importData() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            input.onchange = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        try {
-                            const data = JSON.parse(e.target.result);
-                            teamMembers = data;
-                            updateTeamList();
-                            updateAllMarkers();
-                            updateTeamTable();
-                            saveToFirebase();
-                            alert(`Imported ${data.length} team members successfully!`);
-                        } catch (error) {
-                            alert('Error importing file. Please check the file format.');
-                            console.error('Import error:', error);
-                        }
-                    };
-                    reader.readAsText(file);
-                }
-            };
-            input.click();
-        }
-
-        function clearAllData() {
-            if (confirm('Are you sure you want to clear all team member data? This cannot be undone.')) {
-                teamMembers = [];
-                memberMarkers.forEach(markers => {
-                    markers.forEach(marker => map.removeLayer(marker));
-                });
-                memberMarkers.clear();
-                updateTeamList();
-                updateTeamTable();
-                saveToFirebase();
-                document.getElementById('autoSaveStatus').textContent = 'All data cleared';
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('memberModal');
+            if (e.target === modal) {
+                closeModal();
             }
-        }
-
-        // Utility functions
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-
-        async function searchCities(query) {
-            if (query.length < 3) return [];
-
-            try {
-                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`);
-                const data = await response.json();
-
-                return data.map(item => ({
-                    display_name: item.display_name,
-                    lat: parseFloat(item.lat),
-                    lng: parseFloat(item.lon)
-                }));
-            } catch (error) {
-                console.error('Search error:', error);
-                return [];
-            }
-        }
-
-        function setupAutocomplete(inputId, suggestionsId) {
-            const input = document.getElementById(inputId);
-            const suggestions = document.getElementById(suggestionsId);
-
-            if (!input || !suggestions) return;
-
-            const debouncedSearch = debounce(async (query) => {
-                if (query.length < 3) {
-                    suggestions.style.display = 'none';
-                    return;
-                }
-
-                const results = await searchCities(query);
-                displaySuggestions(results, suggestions, input);
-            }, 300);
-
-            input.addEventListener('input', (e) => {
-                debouncedSearch(e.target.value);
-            });
-
-            input.addEventListener('blur', () => {
-                setTimeout(() => suggestions.style.display = 'none', 200);
-            });
-
-            input.addEventListener('focus', () => {
-                if (input.value.length >= 3) {
-                    debouncedSearch(input.value);
-                }
-            });
-        }
-
-        function displaySuggestions(results, suggestionsContainer, input) {
-            suggestionsContainer.innerHTML = '';
-
-            if (results.length === 0) {
-                suggestionsContainer.style.display = 'none';
-                return;
-            }
-
-            results.forEach(result => {
-                const div = document.createElement('div');
-                div.className = 'autocomplete-suggestion';
-                div.textContent = result.display_name;
-                div.addEventListener('click', () => {
-                    input.value = result.display_name;
-                    input.dataset.lat = result.lat;
-                    input.dataset.lng = result.lng;
-                    suggestionsContainer.style.display = 'none';
-                });
-                suggestionsContainer.appendChild(div);
-            });
-
-            suggestionsContainer.style.display = 'block';
-        }
-
-        async function geocodeCity(city) {
-            try {
-                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city)}&limit=1`);
-                const data = await response.json();
-
-                if (data.length > 0) {
-                    return {
-                        lat: parseFloat(data[0].lat),
-                        lng: parseFloat(data[0].lon),
-                        display_name: data[0].display_name
-                    };
-                }
-                return null;
-            } catch (error) {
-                console.error('Geocoding error:', error);
-                return null;
-            }
-        }
-
-        // Initialize when DOM is loaded
-        document.addEventListener('DOMContentLoaded', initializeApp);
+        });
     </script>
 </body>
 </html>
