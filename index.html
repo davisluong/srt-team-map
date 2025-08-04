@@ -42,11 +42,37 @@
             opacity: 0.9;
         }
 
+        .admin-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .admin-toggle:hover {
+            background: rgba(255,255,255,0.3);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        /* View-only mode styles */
         .main-content {
             display: grid;
             grid-template-columns: 1fr 400px;
             gap: 20px;
             height: calc(100vh - 150px);
+        }
+
+        .main-content.view-only {
+            grid-template-columns: 1fr;
         }
 
         .map-container {
@@ -95,6 +121,10 @@
             padding: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             overflow-y: auto;
+        }
+
+        .sidebar.hidden {
+            display: none;
         }
 
         .sidebar h2 {
@@ -215,6 +245,12 @@
             transform: translateY(-2px);
         }
 
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .btn-secondary {
             background: #6c757d;
         }
@@ -295,6 +331,46 @@
             color: #c62828;
         }
 
+        .view-only-info {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 14px;
+            border: 1px solid #bbdefb;
+        }
+
+        .view-only-info h3 {
+            margin-bottom: 8px;
+            color: #0d47a1;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 12px;
+            border: 1px solid #c3e6cb;
+            display: none;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 12px;
+            border: 1px solid #f5c6cb;
+            display: none;
+        }
+
         @media (max-width: 1024px) {
             .main-content {
                 grid-template-columns: 1fr;
@@ -303,6 +379,17 @@
             
             .sidebar {
                 max-height: 400px;
+            }
+
+            .admin-toggle {
+                position: relative;
+                top: 0;
+                right: 0;
+                margin-bottom: 20px;
+                display: block;
+                width: fit-content;
+                margin-left: auto;
+                margin-right: auto;
             }
         }
 
@@ -340,16 +427,52 @@
         .form-group.has-icon input {
             padding-right: 35px;
         }
+
+        .mode-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 1000;
+        }
+
+        .mode-indicator.admin {
+            background: rgba(220, 53, 69, 0.8);
+        }
+
+        .mode-indicator.view {
+            background: rgba(40, 167, 69, 0.8);
+        }
+
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 11px;
+            color: #6c757d;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <button class="admin-toggle" onclick="toggleAdminMode()" id="adminToggle">
+            🔧 Admin Mode
+        </button>
+
         <div class="header">
-            <h1>🌍 SR&T Team Location Map</h1>
-            <p>Our team across the world</p>
+            <h1>🌍 Team Location Map</h1>
+            <p>Visualize your global team connections</p>
         </div>
 
-        <div class="main-content">
+        <div class="main-content" id="mainContent">
             <div class="map-container">
                 <div class="controls">
                     <h3>World Map</h3>
@@ -358,8 +481,13 @@
                 <div id="map"></div>
             </div>
 
-            <div class="sidebar">
-                <div class="setup-instructions">
+            <div class="sidebar" id="sidebar">
+                <div class="view-only-info" id="viewOnlyInfo" style="display: none;">
+                    <h3>👁️ View-Only Mode</h3>
+                    <p>You're viewing the team location map in read-only mode. Only administrators can add or edit team members.</p>
+                </div>
+
+                <div class="setup-instructions" id="setupInstructions">
                     <h3>🚀 Setup Instructions</h3>
                     <p><strong>1. Firebase Setup:</strong></p>
                     <p>• Create a Firebase project at <code>console.firebase.google.com</code></p>
@@ -368,11 +496,18 @@
                     <p><strong>2. GitHub Deployment:</strong></p>
                     <p>• Push this HTML file to a GitHub repository</p>
                     <p>• Enable GitHub Pages in repository settings</p>
+                    <p><strong>3. Share with team:</strong></p>
+                    <p>• Normal URL: View-only mode for team members</p>
+                    <p>• Admin URL: Add <code>?admin=true</code> for editing access</p>
                 </div>
 
                 <div id="firebaseStatus" class="firebase-status error">
-                    ⚠️ Firebase not configured. Add your config below.
+                    ⚠️ Firebase not configured. Using local storage.
                 </div>
+
+                <div class="success-message" id="successMessage"></div>
+                <div class="error-message" id="errorMessage"></div>
+                <div class="debug-info" id="debugInfo"></div>
 
                 <h2>👥 Team Management</h2>
                 
@@ -410,7 +545,7 @@
                         <textarea id="notes" placeholder="Additional information..."></textarea>
                     </div>
                     
-                    <button type="submit" class="btn">➕ Add Team Member</button>
+                    <button type="submit" class="btn" id="submitBtn">➕ Add Team Member</button>
                     <button type="button" id="cancelEdit" class="btn btn-secondary" style="display: none;">❌ Cancel Edit</button>
                 </form>
 
@@ -419,6 +554,10 @@
                     <div id="teamMembers"></div>
                 </div>
             </div>
+        </div>
+
+        <div class="mode-indicator view" id="modeIndicator">
+            👁️ View Mode
         </div>
     </div>
 
@@ -451,10 +590,12 @@ const firebaseConfig = {
             firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
             firebaseInitialized = true;
+            showMessage('✅ Firebase connected successfully!', 'success');
             document.getElementById('firebaseStatus').innerHTML = '✅ Firebase connected successfully!';
             document.getElementById('firebaseStatus').className = 'firebase-status';
         } catch (error) {
             console.log('Firebase not configured - using local storage');
+            showMessage('Using local storage (Firebase not configured)', 'info');
         }
 
         // Initialize Map
@@ -469,11 +610,47 @@ const firebaseConfig = {
         let connectionLines = [];
         let showLines = true;
         let editingId = null;
+        let isAdminMode = false;
 
         // Autocomplete variables
         let searchTimeouts = {};
         let selectedSuggestionIndex = -1;
         let currentSuggestions = [];
+
+        // Debug mode
+        let debugMode = false;
+
+        // Utility functions
+        function showMessage(message, type = 'info') {
+            console.log(`[${type.toUpperCase()}] ${message}`);
+            
+            if (type === 'success') {
+                const successEl = document.getElementById('successMessage');
+                successEl.textContent = message;
+                successEl.style.display = 'block';
+                setTimeout(() => successEl.style.display = 'none', 3000);
+            } else if (type === 'error') {
+                const errorEl = document.getElementById('errorMessage');
+                errorEl.textContent = message;
+                errorEl.style.display = 'block';
+                setTimeout(() => errorEl.style.display = 'none', 5000);
+            }
+            
+            if (debugMode) {
+                const debugEl = document.getElementById('debugInfo');
+                debugEl.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${type}: ${message}</div>`;
+                debugEl.style.display = 'block';
+            }
+        }
+
+        function enableDebugMode() {
+            debugMode = true;
+            document.getElementById('debugInfo').style.display = 'block';
+            showMessage('Debug mode enabled', 'info');
+        }
+
+        // Check for admin mode
+        checkAdminMode();
 
         // Load team members on startup
         loadTeamMembers();
@@ -486,6 +663,73 @@ const firebaseConfig = {
         // Setup autocomplete for location inputs
         setupAutocomplete('currentLocation');
         setupAutocomplete('birthPlace');
+
+        // Check if admin mode is enabled
+        function checkAdminMode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            isAdminMode = urlParams.get('admin') === 'true';
+            
+            // Enable debug mode if requested
+            if (urlParams.get('debug') === 'true') {
+                enableDebugMode();
+            }
+            
+            updateUIMode();
+        }
+
+        // Toggle admin mode
+        function toggleAdminMode() {
+            isAdminMode = !isAdminMode;
+            const url = new URL(window.location);
+            if (isAdminMode) {
+                url.searchParams.set('admin', 'true');
+            } else {
+                url.searchParams.delete('admin');
+            }
+            window.history.replaceState({}, '', url);
+            updateUIMode();
+        }
+
+        // Update UI based on mode
+        function updateUIMode() {
+            const mainContent = document.getElementById('mainContent');
+            const sidebar = document.getElementById('sidebar');
+            const adminToggle = document.getElementById('adminToggle');
+            const modeIndicator = document.getElementById('modeIndicator');
+            const viewOnlyInfo = document.getElementById('viewOnlyInfo');
+            const setupInstructions = document.getElementById('setupInstructions');
+
+            if (isAdminMode) {
+                // Admin mode - show sidebar
+                mainContent.classList.remove('view-only');
+                sidebar.classList.remove('hidden');
+                adminToggle.innerHTML = '👁️ View Mode';
+                modeIndicator.innerHTML = '🔧 Admin Mode';
+                modeIndicator.className = 'mode-indicator admin';
+                viewOnlyInfo.style.display = 'none';
+                setupInstructions.style.display = 'block';
+                showMessage('Admin mode enabled', 'success');
+            } else {
+                // View-only mode - hide sidebar
+                mainContent.classList.add('view-only');
+                sidebar.classList.add('hidden');
+                adminToggle.innerHTML = '🔧 Admin Mode';
+                modeIndicator.innerHTML = '👁️ View Mode';
+                modeIndicator.className = 'mode-indicator view';
+                
+                // Show view-only info if there are team members
+                if (teamMembers.length > 0) {
+                    viewOnlyInfo.style.display = 'block';
+                    setupInstructions.style.display = 'none';
+                }
+                showMessage('View-only mode enabled', 'info');
+            }
+
+            // Trigger map resize after layout change
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+        }
 
         // Autocomplete setup function
         function setupAutocomplete(inputId) {
@@ -504,7 +748,7 @@ const firebaseConfig = {
                     clearTimeout(searchTimeouts[inputId]);
                 }
 
-                // Deb ounce search
+                // Debounce search
                 searchTimeouts[inputId] = setTimeout(() => {
                     searchLocations(query, suggestionsContainer, input);
                 }, 300);
@@ -616,6 +860,7 @@ const firebaseConfig = {
                 input.value = cleanName;
                 hideSuggestions(container);
                 input.focus();
+                showMessage(`Selected location: ${cleanName}`, 'info');
             }
         }
 
@@ -646,54 +891,94 @@ const firebaseConfig = {
         // Form submission handler
         async function handleFormSubmit(e) {
             e.preventDefault();
+            showMessage('Form submitted', 'info');
             
-            const formData = {
-                name: document.getElementById('name').value,
-                role: document.getElementById('role').value,
-                currentLocation: document.getElementById('currentLocation').value,
-                birthPlace: document.getElementById('birthPlace').value,
-                notes: document.getElementById('notes').value,
-                timestamp: new Date()
-            };
-
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.textContent;
+            
             try {
+                // Disable submit button
+                submitBtn.disabled = true;
+                submitBtn.textContent = '⏳ Saving...';
+                
+                // Get form data
+                const formData = {
+                    name: document.getElementById('name').value.trim(),
+                    role: document.getElementById('role').value.trim(),
+                    currentLocation: document.getElementById('currentLocation').value.trim(),
+                    birthPlace: document.getElementById('birthPlace').value.trim(),
+                    notes: document.getElementById('notes').value.trim(),
+                    timestamp: new Date().toISOString()
+                };
+
+                showMessage(`Form data: ${JSON.stringify(formData)}`, 'info');
+
+                // Validate required fields
+                if (!formData.name || !formData.role || !formData.currentLocation || !formData.birthPlace) {
+                    throw new Error('Please fill in all required fields');
+                }
+
+                // Save team member
                 if (editingId) {
+                    showMessage(`Updating team member with ID: ${editingId}`, 'info');
                     await updateTeamMember(editingId, formData);
+                    showMessage('Team member updated successfully!', 'success');
                 } else {
+                    showMessage('Adding new team member', 'info');
                     await addTeamMember(formData);
+                    showMessage('Team member added successfully!', 'success');
                 }
                 
+                // Reset form and reload data
                 document.getElementById('teamForm').reset();
                 cancelEdit();
-                loadTeamMembers();
+                await loadTeamMembers();
+                
             } catch (error) {
-                alert('Error saving team member: ' + error.message);
+                console.error('Error saving team member:', error);
+                showMessage(`Error: ${error.message}`, 'error');
+            } finally {
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
             }
         }
 
         // Add team member
         async function addTeamMember(memberData) {
+            showMessage('Adding team member to database', 'info');
+            
             if (firebaseInitialized) {
-                await db.collection('teamMembers').add(memberData);
+                showMessage('Using Firebase', 'info');
+                const docRef = await db.collection('teamMembers').add(memberData);
+                showMessage(`Firebase document created with ID: ${docRef.id}`, 'info');
             } else {
+                showMessage('Using localStorage', 'info');
                 // Use local storage as fallback
                 const members = JSON.parse(localStorage.getItem('teamMembers') || '[]');
                 memberData.id = Date.now().toString();
                 members.push(memberData);
                 localStorage.setItem('teamMembers', JSON.stringify(members));
+                showMessage(`LocalStorage updated, new member count: ${members.length}`, 'info');
             }
         }
 
         // Update team member
         async function updateTeamMember(id, memberData) {
+            showMessage(`Updating team member: ${id}`, 'info');
+            
             if (firebaseInitialized) {
                 await db.collection('teamMembers').doc(id).update(memberData);
+                showMessage('Firebase document updated', 'info');
             } else {
                 const members = JSON.parse(localStorage.getItem('teamMembers') || '[]');
                 const index = members.findIndex(m => m.id === id);
                 if (index !== -1) {
                     members[index] = { ...members[index], ...memberData };
                     localStorage.setItem('teamMembers', JSON.stringify(members));
+                    showMessage('LocalStorage member updated', 'info');
+                } else {
+                    throw new Error('Team member not found');
                 }
             }
         }
@@ -701,34 +986,47 @@ const firebaseConfig = {
         // Delete team member
         async function deleteTeamMember(id) {
             if (confirm('Are you sure you want to delete this team member?')) {
-                if (firebaseInitialized) {
-                    await db.collection('teamMembers').doc(id).delete();
-                } else {
-                    const members = JSON.parse(localStorage.getItem('teamMembers') || '[]');
-                    const filtered = members.filter(m => m.id !== id);
-                    localStorage.setItem('teamMembers', JSON.stringify(filtered));
+                try {
+                    if (firebaseInitialized) {
+                        await db.collection('teamMembers').doc(id).delete();
+                    } else {
+                        const members = JSON.parse(localStorage.getItem('teamMembers') || '[]');
+                        const filtered = members.filter(m => m.id !== id);
+                        localStorage.setItem('teamMembers', JSON.stringify(filtered));
+                    }
+                    showMessage('Team member deleted successfully', 'success');
+                    loadTeamMembers();
+                } catch (error) {
+                    showMessage(`Error deleting team member: ${error.message}`, 'error');
                 }
-                loadTeamMembers();
             }
         }
 
         // Load team members
         async function loadTeamMembers() {
             try {
+                showMessage('Loading team members', 'info');
+                
                 if (firebaseInitialized) {
+                    showMessage('Loading from Firebase', 'info');
                     const snapshot = await db.collection('teamMembers').get();
                     teamMembers = snapshot.docs.map(doc => ({
                         id: doc.id,
                         ...doc.data()
                     }));
+                    showMessage(`Loaded ${teamMembers.length} members from Firebase`, 'info');
                 } else {
+                    showMessage('Loading from localStorage', 'info');
                     teamMembers = JSON.parse(localStorage.getItem('teamMembers') || '[]');
+                    showMessage(`Loaded ${teamMembers.length} members from localStorage`, 'info');
                 }
                 
                 displayTeamMembers();
                 updateMap();
+                updateUIMode(); // Update UI after loading data
             } catch (error) {
                 console.error('Error loading team members:', error);
+                showMessage(`Error loading team members: ${error.message}`, 'error');
             }
         }
 
@@ -775,6 +1073,7 @@ const firebaseConfig = {
             editingId = id;
             document.getElementById('cancelEdit').style.display = 'block';
             document.querySelector('.btn[type="submit"]').textContent = '💾 Update Team Member';
+            showMessage(`Editing team member: ${member.name}`, 'info');
         }
 
         // Cancel edit
@@ -783,6 +1082,7 @@ const firebaseConfig = {
             document.getElementById('cancelEdit').style.display = 'none';
             document.querySelector('.btn[type="submit"]').textContent = '➕ Add Team Member';
             document.getElementById('teamForm').reset();
+            showMessage('Edit cancelled', 'info');
         }
 
         // Geocoding function (simplified)
@@ -801,6 +1101,8 @@ const firebaseConfig = {
 
         // Update map with team members
         async function updateMap() {
+            showMessage('Updating map', 'info');
+            
             // Clear existing markers and lines
             markers.forEach(marker => map.removeLayer(marker));
             connectionLines.forEach(line => map.removeLayer(line));
@@ -876,6 +1178,8 @@ const firebaseConfig = {
                 const group = new L.featureGroup(markers);
                 map.fitBounds(group.getBounds().pad(0.1));
             }
+            
+            showMessage(`Map updated with ${markers.length} markers`, 'info');
         }
 
         // Toggle connection lines
@@ -895,30 +1199,38 @@ const firebaseConfig = {
             updateMap();
         }
 
-        // Add some demo data if no Firebase
-        if (!firebaseInitialized && teamMembers.length === 0) {
-            const demoMembers = [
-                {
-                    id: '1',
-                    name: 'Sarah Chen',
-                    role: 'Senior Developer',
-                    currentLocation: 'Toronto, Canada',
-                    birthPlace: 'Shanghai, China',
-                    notes: 'Full-stack developer specializing in React and Node.js'
-                },
-                {
-                    id: '2',
-                    name: 'Marcus Johnson',
-                    role: 'Product Manager',
-                    currentLocation: 'New York, USA',
-                    birthPlace: 'Lagos, Nigeria',
-                    notes: 'Passionate about user experience and agile methodologies'
-                }
-            ];
-            
-            localStorage.setItem('teamMembers', JSON.stringify(demoMembers));
-            loadTeamMembers();
+        // Add some demo data if no Firebase and no existing data
+        if (!firebaseInitialized) {
+            const existingMembers = JSON.parse(localStorage.getItem('teamMembers') || '[]');
+            if (existingMembers.length === 0) {
+                const demoMembers = [
+                    {
+                        id: '1',
+                        name: 'Sarah Chen',
+                        role: 'Senior Developer',
+                        currentLocation: 'Toronto, Canada',
+                        birthPlace: 'Shanghai, China',
+                        notes: 'Full-stack developer specializing in React and Node.js'
+                    },
+                    {
+                        id: '2',
+                        name: 'Marcus Johnson',
+                        role: 'Product Manager',
+                        currentLocation: 'New York, USA',
+                        birthPlace: 'Lagos, Nigeria',
+                        notes: 'Passionate about user experience and agile methodologies'
+                    }
+                ];
+                
+                localStorage.setItem('teamMembers', JSON.stringify(demoMembers));
+                showMessage('Demo data added', 'info');
+                loadTeamMembers();
+            }
         }
+
+        // Add debug access via console
+        window.enableDebug = enableDebugMode;
+        console.log('Team Location Map loaded. Type "enableDebug()" to see debug information.');
     </script>
 </body>
 </html>
