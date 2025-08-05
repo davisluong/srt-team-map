@@ -63,7 +63,6 @@
             border-color: rgba(255,255,255,0.5);
         }
 
-        /* View-only mode styles */
         .main-content {
             display: grid;
             grid-template-columns: 1fr 400px;
@@ -182,7 +181,6 @@
             min-height: 80px;
         }
 
-        /* Autocomplete Styles */
         .autocomplete-container {
             position: relative;
         }
@@ -298,6 +296,12 @@
         .team-member:hover {
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             transform: translateY(-2px);
+        }
+
+        .team-member.highlighted {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            box-shadow: 0 4px 16px rgba(33, 150, 243, 0.3);
         }
 
         .member-name {
@@ -465,11 +469,19 @@
         }
 
         .team-member.view-only {
-            cursor: default;
+            cursor: pointer;
         }
 
         .team-member.view-only:hover {
-            transform: none;
+            background: #e8f5e8;
+            border-color: #4caf50;
+        }
+
+        .click-hint {
+            font-size: 11px;
+            color: #888;
+            font-style: italic;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -532,7 +544,6 @@
                     <div class="form-group has-icon">
                         <label for="currentLocation">Current Location *</label>
                         <div class="autocomplete-container">
-                
                             <input type="text" id="currentLocation" placeholder="Start typing city name..." required autocomplete="off">
                             <span class="input-icon">🔍</span>
                             <div class="autocomplete-suggestions" id="currentLocationSuggestions"></div>
@@ -568,6 +579,7 @@
                 <div class="view-only-info">
                     <h3>👁️ Team Directory</h3>
                     <p>Explore our global team members and their locations on the map.</p>
+                    <div class="click-hint">💡 Click on any team member to highlight them on the map</div>
                 </div>
 
                 <h2>👥 Our Team (<span id="viewOnlyMemberCount">0</span>)</h2>
@@ -601,6 +613,7 @@
         var selectedSuggestionIndex = -1;
         var currentSuggestions = [];
         var map = null;
+        var selectedMemberId = null;
 
         // Firebase Configuration - REPLACE WITH YOUR CONFIG
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -730,6 +743,62 @@ const firebaseConfig = {
                     map.invalidateSize();
                 }, 100);
             }
+        }
+
+        // Highlight team member on map
+        function highlightTeamMember(memberId) {
+            selectedMemberId = memberId;
+            var member = teamMembers.find(function(m) { return m.id === memberId; });
+            if (!member) return;
+
+            // Update sidebar highlighting
+            var memberCards = document.querySelectorAll('.team-member.view-only');
+            memberCards.forEach(function(card) {
+                card.classList.remove('highlighted');
+            });
+            
+            var selectedCard = document.querySelector('[data-member-id="' + memberId + '"]');
+            if (selectedCard) {
+                selectedCard.classList.add('highlighted');
+            }
+
+            // Get coordinates and focus map
+            Promise.all([
+                geocodeLocation(member.currentLocation),
+                geocodeLocation(member.birthPlace)
+            ]).then(function(coords) {
+                var currentCoords = coords[0];
+                var birthCoords = coords[1];
+
+                if (currentCoords && birthCoords) {
+                    // Create bounds to fit both locations
+                    var group = L.featureGroup([
+                        L.marker(currentCoords),
+                        L.marker(birthCoords)
+                    ]);
+                    map.fitBounds(group.getBounds().pad(0.2));
+                } else if (currentCoords) {
+                    map.setView(currentCoords, 8);
+                } else if (birthCoords) {
+                    map.setView(birthCoords, 8);
+                }
+
+                // Update map with highlighting
+                updateMap();
+            });
+        }
+
+        // Calculate bearing between two points for arrow direction
+        function calculateBearing(lat1, lng1, lat2, lng2) {
+            var dLng = (lng2 - lng1) * Math.PI / 180;
+            var lat1Rad = lat1 * Math.PI / 180;
+            var lat2Rad = lat2 * Math.PI / 180;
+            
+            var y = Math.sin(dLng) * Math.cos(lat2Rad);
+            var x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLng);
+            
+            var bearing = Math.atan2(y, x) * 180 / Math.PI;
+            return (bearing + 360) % 360;
         }
 
         // Search locations using Nominatim API
@@ -1057,7 +1126,7 @@ const firebaseConfig = {
             }
 
             container.innerHTML = teamMembers.map(function(member) {
-                return '<div class="team-member view-only">' +
+                return '<div class="team-member view-only" data-member-id="' + member.id + '" onclick="highlightTeamMember(\'' + member.id + '\')">' +
                     '<div class="member-name">' + member.name + '</div>' +
                     '<div class="member-role">' + member.role + '</div>' +
                     '<div class="member-locations">' +
@@ -1131,16 +1200,19 @@ const firebaseConfig = {
                 ]).then(function(coords) {
                     var currentCoords = coords[0];
                     var birthCoords = coords[1];
+                    var isHighlighted = selectedMemberId === member.id;
 
                     // Always show current location markers
                     if (currentCoords) {
+                        var currentMarkerSize = isHighlighted ? 35 : 30;
                         var currentMarker = L.marker(currentCoords, {
                             icon: L.divIcon({
                                 className: 'custom-marker',
-                                html: '<div style="background: #007bff; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">📍</div>',
-                                iconSize: [30, 30],
-                                iconAnchor: [15, 15]
-                            })
+                                html: '<div style="background: ' + (isHighlighted ? '#ff9800' : '#007bff') + '; color: white; border-radius: 50%; width: ' + currentMarkerSize + 'px; height: ' + currentMarkerSize + 'px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 3px solid white; box-shadow: 0 3px 6px rgba(0,0,0,0.4); z-index: ' + (isHighlighted ? '1000' : '500') + ';">📍</div>',
+                                iconSize: [currentMarkerSize, currentMarkerSize],
+                                iconAnchor: [currentMarkerSize/2, currentMarkerSize/2]
+                            }),
+                            zIndexOffset: isHighlighted ? 1000 : 0
                         }).addTo(map);
 
                         currentMarker.bindPopup(
@@ -1157,13 +1229,15 @@ const firebaseConfig = {
 
                     // Only show birth place markers and connection lines when showLines is true
                     if (showLines && birthCoords) {
+                        var birthMarkerSize = isHighlighted ? 30 : 25;
                         var birthMarker = L.marker(birthCoords, {
                             icon: L.divIcon({
                                 className: 'custom-marker',
-                                html: '<div style="background: #28a745; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">🏠</div>',
-                                iconSize: [25, 25],
-                                iconAnchor: [12.5, 12.5]
-                            })
+                                html: '<div style="background: ' + (isHighlighted ? '#ff5722' : '#28a745') + '; color: white; border-radius: 50%; width: ' + birthMarkerSize + 'px; height: ' + birthMarkerSize + 'px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 3px solid white; box-shadow: 0 3px 6px rgba(0,0,0,0.4);">🏠</div>',
+                                iconSize: [birthMarkerSize, birthMarkerSize],
+                                iconAnchor: [birthMarkerSize/2, birthMarkerSize/2]
+                            }),
+                            zIndexOffset: isHighlighted ? 1000 : 0
                         }).addTo(map);
 
                         birthMarker.bindPopup(
@@ -1176,108 +1250,10 @@ const firebaseConfig = {
                         markers.push(birthMarker);
                     }
 
-                    // Only show connection lines when showLines is true
+                    // Only show connection lines with arrows when showLines is true
                     if (showLines && currentCoords && birthCoords) {
-                        var line = L.polyline([currentCoords, birthCoords], {
-                            color: '#ff6b6b',
-                            weight: 2,
-                            opacity: 0.7,
-                            dashArray: '10, 10'
-                        }).addTo(map);
-                        connectionLines.push(line);
-                    }
-                });
-            });
-
-            Promise.all(promises).then(function() {
-                if (markers.length > 0) {
-                    var group = new L.featureGroup(markers);
-                    map.fitBounds(group.getBounds().pad(0.1));
-                }
-                showMessage('Map updated with ' + markers.length + ' markers', 'info');
-            });
-        }
-
-        // Toggle connection lines and birth places
-        function toggleConnectionLines() {
-            showLines = !showLines;
-            var button = document.getElementById('toggleLines');
-            
-            if (showLines) {
-                button.textContent = '🔗 Hide Birth Places & Lines';
-                button.className = 'toggle-btn';
-            } else {
-                button.textContent = '🔗 Show Birth Places & Lines';
-                button.className = 'toggle-btn inactive';
-            }
-
-            updateMap();
-        }
-
-        // Initialize everything when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            showMessage('DOM loaded, initializing application', 'info');
-            
-            initializeFirebase();
-            initializeMap();
-            checkAdminMode();
-            loadTeamMembers();
-            
-            var teamForm = document.getElementById('teamForm');
-            if (teamForm) {
-                teamForm.addEventListener('submit', handleFormSubmit);
-            }
-            
-            var toggleLinesBtn = document.getElementById('toggleLines');
-            if (toggleLinesBtn) {
-                toggleLinesBtn.addEventListener('click', toggleConnectionLines);
-            }
-            
-            var cancelEditBtn = document.getElementById('cancelEdit');
-            if (cancelEditBtn) {
-                cancelEditBtn.addEventListener('click', cancelEdit);
-            }
-            
-            setupAutocomplete('currentLocation');
-            setupAutocomplete('birthPlace');
-            
-            if (!firebaseInitialized) {
-                var existingMembers = JSON.parse(localStorage.getItem('teamMembers') || '[]');
-                if (existingMembers.length === 0) {
-                    var demoMembers = [
-                        {
-                            id: '1',
-                            name: 'Sarah Chen',
-                            role: 'Senior Developer',
-                            currentLocation: 'Toronto, Canada',
-                            birthPlace: 'Shanghai, China',
-                            notes: 'Full-stack developer specializing in React and Node.js'
-                        },
-                        {
-                            id: '2',
-                            name: 'Marcus Johnson',
-                            role: 'Product Manager',
-                            currentLocation: 'New York, USA',
-                            birthPlace: 'Lagos, Nigeria',
-                            notes: 'Passionate about user experience and agile methodologies'
-                        }
-                    ];
-                    
-                    localStorage.setItem('teamMembers', JSON.stringify(demoMembers));
-                    showMessage('Demo data added', 'info');
-                    loadTeamMembers();
-                }
-            }
-            
-            showMessage('Application initialization complete', 'success');
-        });
-
-        // Add debug access via console
-        window.enableDebug = function() {
-            console.log('Debug mode enabled - check browser console for detailed logs');
-        };
-        
-        console.log('Team Location Map loaded. Type "enableDebug()" to see debug information.');
-    </script>
-</body>
-</html>
+                        var lineWeight = isHighlighted ? 3 : 1;
+                        var lineOpacity = isHighlighted ? 1.0 : 0.6;
+                        var lineColor = isHighlighted ? '#ff5722' : '#ff6b6b';
+                        
+                        
