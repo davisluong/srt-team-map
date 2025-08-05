@@ -72,7 +72,7 @@
         }
 
         .main-content.view-only {
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr 350px;
         }
 
         .map-container {
@@ -132,6 +132,21 @@
             margin-bottom: 20px;
             text-align: center;
             font-size: 1.5rem;
+        }
+
+        .view-only-sidebar {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow-y: auto;
+        }
+
+        .view-only-sidebar h2 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.3rem;
         }
 
         .form-group {
@@ -377,7 +392,7 @@
                 grid-template-rows: 1fr auto;
             }
             
-            .sidebar {
+            .sidebar, .view-only-sidebar {
                 max-height: 400px;
             }
 
@@ -448,6 +463,14 @@
         .mode-indicator.view {
             background: rgba(40, 167, 69, 0.8);
         }
+
+        .team-member.view-only {
+            cursor: default;
+        }
+
+        .team-member.view-only:hover {
+            transform: none;
+        }
     </style>
 </head>
 <body>
@@ -465,17 +488,13 @@
             <div class="map-container">
                 <div class="controls">
                     <h3>World Map</h3>
-                    <button id="toggleLines" class="toggle-btn">🔗 Hide Connection Lines</button>
+                    <button id="toggleLines" class="toggle-btn">🔗 Hide Birth Places & Lines</button>
                 </div>
                 <div id="map"></div>
             </div>
 
+            <!-- Admin Sidebar -->
             <div class="sidebar" id="sidebar">
-                <div class="view-only-info" id="viewOnlyInfo" style="display: none;">
-                    <h3>👁️ View-Only Mode</h3>
-                    <p>You're viewing the team location map in read-only mode. Only administrators can add or edit team members.</p>
-                </div>
-
                 <div class="setup-instructions" id="setupInstructions">
                     <h3>🚀 Setup Instructions</h3>
                     <p><strong>1. Firebase Setup:</strong></p>
@@ -513,6 +532,7 @@
                     <div class="form-group has-icon">
                         <label for="currentLocation">Current Location *</label>
                         <div class="autocomplete-container">
+                
                             <input type="text" id="currentLocation" placeholder="Start typing city name..." required autocomplete="off">
                             <span class="input-icon">🔍</span>
                             <div class="autocomplete-suggestions" id="currentLocationSuggestions"></div>
@@ -541,6 +561,17 @@
                     <h3>Team Members (<span id="memberCount">0</span>)</h3>
                     <div id="teamMembers"></div>
                 </div>
+            </div>
+
+            <!-- View-Only Sidebar -->
+            <div class="view-only-sidebar" id="viewOnlySidebar" style="display: none;">
+                <div class="view-only-info">
+                    <h3>👁️ Team Directory</h3>
+                    <p>Explore our global team members and their locations on the map.</p>
+                </div>
+
+                <h2>👥 Our Team (<span id="viewOnlyMemberCount">0</span>)</h2>
+                <div id="viewOnlyTeamMembers"></div>
             </div>
         </div>
 
@@ -625,12 +656,23 @@ const firebaseConfig = {
             }
         }
 
-        // Initialize Map
+        // Initialize Map with improved options
         function initializeMap() {
-            map = L.map('map').setView([20, 0], 2);
+            map = L.map('map', {
+                center: [20, 0],
+                zoom: 2,
+                minZoom: 2,
+                maxZoom: 18,
+                worldCopyJump: true,
+                maxBounds: [[-90, -180], [90, 180]],
+                maxBoundsViscosity: 1.0
+            });
+            
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
+                attribution: '© OpenStreetMap contributors',
+                noWrap: true
             }).addTo(map);
+            
             showMessage('Map initialized', 'info');
         }
 
@@ -658,32 +700,29 @@ const firebaseConfig = {
         function updateUIMode() {
             var mainContent = document.getElementById('mainContent');
             var sidebar = document.getElementById('sidebar');
+            var viewOnlySidebar = document.getElementById('viewOnlySidebar');
             var adminToggle = document.getElementById('adminToggle');
             var modeIndicator = document.getElementById('modeIndicator');
-            var viewOnlyInfo = document.getElementById('viewOnlyInfo');
-            var setupInstructions = document.getElementById('setupInstructions');
 
             if (isAdminMode) {
                 mainContent.classList.remove('view-only');
                 sidebar.classList.remove('hidden');
+                sidebar.style.display = 'block';
+                viewOnlySidebar.style.display = 'none';
                 adminToggle.innerHTML = '👁️ View Mode';
                 modeIndicator.innerHTML = '🔧 Admin Mode';
                 modeIndicator.className = 'mode-indicator admin';
-                viewOnlyInfo.style.display = 'none';
-                setupInstructions.style.display = 'block';
                 showMessage('Admin mode enabled', 'success');
             } else {
                 mainContent.classList.add('view-only');
                 sidebar.classList.add('hidden');
+                sidebar.style.display = 'none';
+                viewOnlySidebar.style.display = 'block';
                 adminToggle.innerHTML = '🔧 Admin Mode';
                 modeIndicator.innerHTML = '👁️ View Mode';
                 modeIndicator.className = 'mode-indicator view';
-                
-                if (teamMembers.length > 0) {
-                    viewOnlyInfo.style.display = 'block';
-                    setupInstructions.style.display = 'none';
-                }
                 showMessage('View-only mode enabled', 'info');
+                displayViewOnlyTeamMembers();
             }
 
             if (map) {
@@ -957,6 +996,7 @@ const firebaseConfig = {
                         });
                         showMessage('Loaded ' + teamMembers.length + ' members from Firebase', 'info');
                         displayTeamMembers();
+                        displayViewOnlyTeamMembers();
                         updateMap();
                         updateUIMode();
                     });
@@ -965,6 +1005,7 @@ const firebaseConfig = {
                     teamMembers = JSON.parse(localStorage.getItem('teamMembers') || '[]');
                     showMessage('Loaded ' + teamMembers.length + ' members from localStorage', 'info');
                     displayTeamMembers();
+                    displayViewOnlyTeamMembers();
                     updateMap();
                     updateUIMode();
                 }
@@ -974,7 +1015,7 @@ const firebaseConfig = {
             }
         }
 
-        // Display team members in sidebar
+        // Display team members in admin sidebar
         function displayTeamMembers() {
             var container = document.getElementById('teamMembers');
             var count = document.getElementById('memberCount');
@@ -999,6 +1040,31 @@ const firebaseConfig = {
                         '<button class="btn btn-secondary btn-small" onclick="editTeamMember(\'' + member.id + '\')">✏️ Edit</button>' +
                         '<button class="btn btn-danger btn-small" onclick="deleteTeamMember(\'' + member.id + '\')">🗑️ Delete</button>' +
                     '</div>' +
+                '</div>';
+            }).join('');
+        }
+
+        // Display team members in view-only sidebar
+        function displayViewOnlyTeamMembers() {
+            var container = document.getElementById('viewOnlyTeamMembers');
+            var count = document.getElementById('viewOnlyMemberCount');
+            
+            if (count) count.textContent = teamMembers.length;
+            
+            if (teamMembers.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666; font-style: italic;">No team members to display.</p>';
+                return;
+            }
+
+            container.innerHTML = teamMembers.map(function(member) {
+                return '<div class="team-member view-only">' +
+                    '<div class="member-name">' + member.name + '</div>' +
+                    '<div class="member-role">' + member.role + '</div>' +
+                    '<div class="member-locations">' +
+                        '📍 Current: ' + member.currentLocation + '<br>' +
+                        '🏠 Born: ' + member.birthPlace +
+                    '</div>' +
+                    (member.notes ? '<div style="font-size: 12px; color: #666; margin-bottom: 8px;">' + member.notes + '</div>' : '') +
                 '</div>';
             }).join('');
         }
@@ -1066,6 +1132,7 @@ const firebaseConfig = {
                     var currentCoords = coords[0];
                     var birthCoords = coords[1];
 
+                    // Always show current location markers
                     if (currentCoords) {
                         var currentMarker = L.marker(currentCoords, {
                             icon: L.divIcon({
@@ -1088,7 +1155,8 @@ const firebaseConfig = {
                         markers.push(currentMarker);
                     }
 
-                    if (birthCoords) {
+                    // Only show birth place markers and connection lines when showLines is true
+                    if (showLines && birthCoords) {
                         var birthMarker = L.marker(birthCoords, {
                             icon: L.divIcon({
                                 className: 'custom-marker',
@@ -1108,7 +1176,8 @@ const firebaseConfig = {
                         markers.push(birthMarker);
                     }
 
-                    if (currentCoords && birthCoords && showLines) {
+                    // Only show connection lines when showLines is true
+                    if (showLines && currentCoords && birthCoords) {
                         var line = L.polyline([currentCoords, birthCoords], {
                             color: '#ff6b6b',
                             weight: 2,
@@ -1129,16 +1198,16 @@ const firebaseConfig = {
             });
         }
 
-        // Toggle connection lines
+        // Toggle connection lines and birth places
         function toggleConnectionLines() {
             showLines = !showLines;
             var button = document.getElementById('toggleLines');
             
             if (showLines) {
-                button.textContent = '🔗 Hide Connection Lines';
+                button.textContent = '🔗 Hide Birth Places & Lines';
                 button.className = 'toggle-btn';
             } else {
-                button.textContent = '🔗 Show Connection Lines';
+                button.textContent = '🔗 Show Birth Places & Lines';
                 button.className = 'toggle-btn inactive';
             }
 
