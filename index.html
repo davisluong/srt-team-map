@@ -739,6 +739,34 @@
           measurementId: "G-J2RNT7MSR1"
         };
 
+// Initialize Firebase with better error handling
+function initializeFirebase() {
+    try {
+        // Only initialize if config looks real
+        if (firebaseConfig.apiKey !== "your-api-key") {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            firebaseInitialized = true;
+            showMessage('✅ Firebase connected successfully!', 'success');
+            var statusEl = document.getElementById('firebaseStatus');
+            if (statusEl) {
+                statusEl.innerHTML = '✅ Firebase connected successfully!';
+                statusEl.className = 'firebase-status';
+            }
+        } else {
+            throw new Error('Please configure Firebase settings');
+        }
+    } catch (error) {
+        console.log('Firebase not configured - using local storage');
+        showMessage('Using local storage (Firebase not configured)', 'info');
+        var statusEl = document.getElementById('firebaseStatus');
+        if (statusEl) {
+            statusEl.innerHTML = '⚠️ Using local storage. Add Firebase config for team sharing.';
+        }
+    }
+}
+
+
         // Utility functions
         function showMessage(message, type) {
             type = type || 'info';
@@ -1334,6 +1362,228 @@
             document.querySelector('.btn[type="submit"]').textContent = '➕ Add Team Member';
             document.getElementById('teamForm').reset();
 
+// Initialize everything when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing application');
+    
+    // Initialize Firebase
+    initializeFirebase();
+    
+    // Initialize Map
+    initializeMap();
+    
+    // Setup profile picture upload
+    setupProfilePictureUpload();
+    
+    // Check for admin mode
+    checkAdminMode();
+    
+    // Load team members
+    loadTeamMembers();
+    
+    // Event Listeners
+    var teamForm = document.getElementById('teamForm');
+    if (teamForm) {
+        teamForm.addEventListener('submit', handleFormSubmit);
+    }
+    
+    var toggleLinesBtn = document.getElementById('toggleLines');
+    if (toggleLinesBtn) {
+        toggleLinesBtn.addEventListener('click', toggleConnectionLines);
+    }
+    
+    var cancelEditBtn = document.getElementById('cancelEdit');
+    if (cancelEditBtn) {
+        cancelEditBtn.addEventListener('click', cancelEdit);
+    }
+    
+    // Setup autocomplete for location inputs
+    setupAutocomplete('currentLocation');
+    setupAutocomplete('birthPlace');
+    
+    // Add demo data if needed
+    if (!firebaseInitialized) {
+        var existingMembers = JSON.parse(localStorage.getItem('teamMembers') || '[]');
+        if (existingMembers.length === 0) {
+            var demoMembers = [
+                {
+                    id: '1',
+                    name: 'Sarah Chen',
+                    role: 'Senior Developer',
+                    currentLocation: 'Toronto, Canada',
+                    birthPlace: 'Shanghai, China',
+                    notes: 'Full-stack developer specializing in React and Node.js'
+                },
+                {
+                    id: '2',
+                    name: 'Marcus Johnson',
+                    role: 'Product Manager',
+                    currentLocation: 'New York, USA',
+                    birthPlace: 'Lagos, Nigeria',
+                    notes: 'Passionate about user experience and agile methodologies'
+                }
+            ];
+            
+            localStorage.setItem('teamMembers', JSON.stringify(demoMembers));
+            console.log('Demo data added');
+            loadTeamMembers();
+        }
+    }
+    
+    console.log('Application initialization complete');
+});
+
+// Complete the missing functions
+function calculateBearing(lat1, lng1, lat2, lng2) {
+    var dLng = (lng2 - lng1) * Math.PI / 180;
+    var lat1Rad = lat1 * Math.PI / 180;
+    var lat2Rad = lat2 * Math.PI / 180;
+    
+    var y = Math.sin(dLng) * Math.cos(lat2Rad);
+    var x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLng);
+    
+    var bearing = Math.atan2(y, x) * 180 / Math.PI;
+    return (bearing + 360) % 360;
+}
+
+function geocodeLocation(location) {
+    return fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(location))
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data && data.length > 0) {
+                return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+            }
+            return null;
+        })
+        .catch(function(error) {
+            console.error('Geocoding error:', error);
+            return null;
+        });
+}
+
+function updateMap() {
+    if (!map) return;
+    
+    console.log('Updating map with', teamMembers.length, 'team members');
+    
+    // Clear existing markers and lines
+    markers.forEach(function(marker) { map.removeLayer(marker); });
+    connectionLines.forEach(function(line) { map.removeLayer(line); });
+    markers = [];
+    connectionLines = [];
+
+    var promises = teamMembers.map(function(member) {
+        return Promise.all([
+            geocodeLocation(member.currentLocation),
+            geocodeLocation(member.birthPlace)
+        ]).then(function(coords) {
+            var currentCoords = coords[0];
+            var birthCoords = coords[1];
+            var isHighlighted = selectedMemberId === member.id;
+
+            // Always show current location markers
+            if (currentCoords) {
+                var currentMarkerSize = isHighlighted ? 35 : 30;
+                var markerHtml;
+                
+                if (member.profilePicture) {
+                    // Use profile picture as marker
+                    markerHtml = '<img src="' + member.profilePicture + '" style="width: ' + currentMarkerSize + 'px; height: ' + currentMarkerSize + 'px; border-radius: 50%; object-fit: cover; border: 3px solid white; box-shadow: 0 3px 6px rgba(0,0,0,0.4);">';
+                } else {
+                    // Use default pin icon
+                    markerHtml = '<div style="background: ' + (isHighlighted ? '#ff9800' : '#007bff') + '; color: white; border-radius: 50%; width: ' + currentMarkerSize + 'px; height: ' + currentMarkerSize + 'px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 3px solid white; box-shadow: 0 3px 6px rgba(0,0,0,0.4);">📍</div>';
+                }
+
+                var currentMarker = L.marker(currentCoords, {
+                    icon: L.divIcon({
+                        className: 'custom-marker',
+                        html: markerHtml,
+                        iconSize: [currentMarkerSize, currentMarkerSize],
+                        iconAnchor: [currentMarkerSize/2, currentMarkerSize/2]
+                    }),
+                    zIndexOffset: isHighlighted ? 1000 : 0
+                }).addTo(map);
+
+                currentMarker.bindPopup(
+                    '<div style="font-family: \'Segoe UI\', sans-serif;">' +
+                        '<h4 style="margin: 0 0 8px 0; color: #333;">' + member.name + '</h4>' +
+                        '<p style="margin: 0 0 4px 0; color: #007bff; font-weight: bold;">' + member.role + '</p>' +
+                        '<p style="margin: 0 0 4px 0; font-size: 12px;"><strong>Current:</strong> ' + member.currentLocation + '</p>' +
+                        '<p style="margin: 0 0 4px 0; font-size: 12px;"><strong>Born:</strong> ' + member.birthPlace + '</p>' +
+                        (member.notes ? '<p style="margin: 4px 0 0 0; font-size: 11px; color: #666; font-style: italic;">' + member.notes + '</p>' : '') +
+                    '</div>'
+                );
+                markers.push(currentMarker);
+            }
+
+            // Only show birth place markers and connection lines when showLines is true
+            if (showLines && birthCoords) {
+                var birthMarkerSize = isHighlighted ? 30 : 25;
+                var birthMarker = L.marker(birthCoords, {
+                    icon: L.divIcon({
+                        className: 'custom-marker',
+                        html: '<div style="background: ' + (isHighlighted ? '#ff5722' : '#28a745') + '; color: white; border-radius: 50%; width: ' + birthMarkerSize + 'px; height: ' + birthMarkerSize + 'px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 3px solid white; box-shadow: 0 3px 6px rgba(0,0,0,0.4);">🏠</div>',
+                        iconSize: [birthMarkerSize, birthMarkerSize],
+                        iconAnchor: [birthMarkerSize/2, birthMarkerSize/2]
+                    }),
+                    zIndexOffset: isHighlighted ? 1000 : 0
+                }).addTo(map);
+
+                birthMarker.bindPopup(
+                    '<div style="font-family: \'Segoe UI\', sans-serif;">' +
+                        '<h4 style="margin: 0 0 8px 0; color: #333;">' + member.name + '</h4>' +
+                        '<p style="margin: 0 0 4px 0; color: #28a745; font-weight: bold;">Birth Place</p>' +
+                        '<p style="margin: 0; font-size: 12px;">' + member.birthPlace + '</p>' +
+                    '</div>'
+                );
+                markers.push(birthMarker);
+            }
+
+            // Only show connection lines with arrows when showLines is true
+            if (showLines && currentCoords && birthCoords) {
+                var lineWeight = isHighlighted ? 3 : 1;
+                var lineOpacity = isHighlighted ? 1.0 : 0.6;
+                var lineColor = isHighlighted ? '#ff5722' : '#ff6b6b';
+                
+                var line = L.polyline([birthCoords, currentCoords], {
+                    color: lineColor,
+                    weight: lineWeight,
+                    opacity: lineOpacity,
+                    dashArray: '5, 5'
+                }).addTo(map);
+                
+                connectionLines.push(line);
+            }
+        });
+    });
+
+    Promise.all(promises).then(function() {
+        if (markers.length > 0) {
+            var group = new L.featureGroup(markers);
+            map.fitBounds(group.getBounds().pad(0.1));
+        }
+        console.log('Map updated with', markers.length, 'markers');
+    });
+}
+
+function toggleConnectionLines() {
+    showLines = !showLines;
+    var button = document.getElementById('toggleLines');
+    
+    if (showLines) {
+        button.textContent = '🔗 Hide Birth Places & Lines';
+        button.className = 'toggle-btn';
+    } else {
+        button.textContent = '🔗 Show Birth Places & Lines';
+        button.className = 'toggle-btn inactive';
+    }
+
+    updateMap();
+}
+
+            
             </script>
 </body>
 </html>
