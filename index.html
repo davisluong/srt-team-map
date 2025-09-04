@@ -63,7 +63,6 @@
             border-color: rgba(255,255,255,0.5);
         }
 
-        /* View-only mode styles */
         .main-content {
             display: grid;
             grid-template-columns: 1fr 400px;
@@ -182,7 +181,6 @@
             min-height: 80px;
         }
 
-        /* Autocomplete Styles */
         .autocomplete-container {
             position: relative;
         }
@@ -298,6 +296,27 @@
         .team-member:hover {
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             transform: translateY(-2px);
+        }
+
+        .team-member.highlighted {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            box-shadow: 0 4px 16px rgba(33, 150, 243, 0.3);
+        }
+
+        .member-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .member-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 12px;
+            border: 2px solid #e0e0e0;
         }
 
         .member-name {
@@ -465,11 +484,96 @@
         }
 
         .team-member.view-only {
-            cursor: default;
+            cursor: pointer;
         }
 
         .team-member.view-only:hover {
-            transform: none;
+            background: #e8f5e8;
+            border-color: #4caf50;
+        }
+
+        .click-hint {
+            font-size: 11px;
+            color: #888;
+            font-style: italic;
+            margin-top: 5px;
+        }
+
+        /* Profile Picture Upload Styles */
+        .profile-picture-upload {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 15px;
+            border: 2px dashed #e0e0e0;
+            border-radius: 8px;
+            transition: border-color 0.3s ease;
+        }
+
+        .profile-picture-upload:hover {
+            border-color: #667eea;
+        }
+
+        .profile-preview {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #e0e0e0;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #666;
+        }
+
+        .upload-controls {
+            flex: 1;
+        }
+
+        .upload-controls input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-right: 8px;
+        }
+
+        .upload-btn:hover {
+            background: #218838;
+        }
+
+        .remove-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .remove-btn:hover {
+            background: #c82333;
+        }
+
+        .upload-info {
+            font-size: 11px;
+            color: #666;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -519,6 +623,25 @@
                 <h2>👥 Team Management</h2>
                 
                 <form id="teamForm">
+                    <!-- Profile Picture Upload -->
+                    <div class="profile-picture-upload">
+                        <div class="profile-preview" id="profilePreview">
+                            👤
+                        </div>
+                        <div class="upload-controls">
+                            <input type="file" id="profilePicture" accept="image/*">
+                            <button type="button" class="upload-btn" onclick="document.getElementById('profilePicture').click()">
+                                📷 Upload Photo
+                            </button>
+                            <button type="button" class="remove-btn" onclick="removeProfilePicture()" id="removePhotoBtn" style="display: none;">
+                                🗑️ Remove
+                            </button>
+                            <div class="upload-info">
+                                JPG, PNG, GIF up to 2MB. Square images work best.
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label for="name">Name *</label>
                         <input type="text" id="name" required>
@@ -532,7 +655,6 @@
                     <div class="form-group has-icon">
                         <label for="currentLocation">Current Location *</label>
                         <div class="autocomplete-container">
-                
                             <input type="text" id="currentLocation" placeholder="Start typing city name..." required autocomplete="off">
                             <span class="input-icon">🔍</span>
                             <div class="autocomplete-suggestions" id="currentLocationSuggestions"></div>
@@ -568,6 +690,7 @@
                 <div class="view-only-info">
                     <h3>👁️ Team Directory</h3>
                     <p>Explore our global team members and their locations on the map.</p>
+                    <div class="click-hint">💡 Click on any team member to highlight them on the map</div>
                 </div>
 
                 <h2>👥 Our Team (<span id="viewOnlyMemberCount">0</span>)</h2>
@@ -601,8 +724,9 @@
         var selectedSuggestionIndex = -1;
         var currentSuggestions = [];
         var map = null;
+        var selectedMemberId = null;
+        var currentProfilePicture = null;
 
-        // Firebase Configuration - REPLACE WITH YOUR CONFIG
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyCgEh2UhEZFCFtn_2h_scIA8YHYTPHPy2M",
@@ -614,7 +738,6 @@ const firebaseConfig = {
   appId: "1:1041786833700:web:a4927a4e88470cd55d81b1",
   measurementId: "G-J2RNT7MSR1"
 };
-
 
         // Utility functions
         function showMessage(message, type) {
@@ -636,6 +759,51 @@ const firebaseConfig = {
                     setTimeout(function() { errorEl.style.display = 'none'; }, 5000);
                 }
             }
+        }
+
+        // Profile picture handling
+        function setupProfilePictureUpload() {
+            var fileInput = document.getElementById('profilePicture');
+            fileInput.addEventListener('change', function(e) {
+                var file = e.target.files[0];
+                if (file) {
+                    // Check file size (2MB limit)
+                    if (file.size > 2 * 1024 * 1024) {
+                        showMessage('Image size must be less than 2MB', 'error');
+                        return;
+                    }
+
+                    // Check file type
+                    if (!file.type.startsWith('image/')) {
+                        showMessage('Please select a valid image file', 'error');
+                        return;
+                    }
+
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        currentProfilePicture = e.target.result;
+                        updateProfilePreview(currentProfilePicture);
+                        document.getElementById('removePhotoBtn').style.display = 'inline-block';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        function updateProfilePreview(imageData) {
+            var preview = document.getElementById('profilePreview');
+            if (imageData) {
+                preview.innerHTML = '<img src="' + imageData + '" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">';
+            } else {
+                preview.innerHTML = '👤';
+            }
+        }
+
+        function removeProfilePicture() {
+            currentProfilePicture = null;
+            updateProfilePreview(null);
+            document.getElementById('profilePicture').value = '';
+            document.getElementById('removePhotoBtn').style.display = 'none';
         }
 
         // Initialize Firebase
@@ -732,6 +900,49 @@ const firebaseConfig = {
             }
         }
 
+        // Highlight team member on map
+        function highlightTeamMember(memberId) {
+            selectedMemberId = memberId;
+            var member = teamMembers.find(function(m) { return m.id === memberId; });
+            if (!member) return;
+
+            // Update sidebar highlighting
+            var memberCards = document.querySelectorAll('.team-member.view-only');
+            memberCards.forEach(function(card) {
+                card.classList.remove('highlighted');
+            });
+            
+            var selectedCard = document.querySelector('[data-member-id="' + memberId + '"]');
+            if (selectedCard) {
+                selectedCard.classList.add('highlighted');
+            }
+
+            // Get coordinates and focus map
+            Promise.all([
+                geocodeLocation(member.currentLocation),
+                geocodeLocation(member.birthPlace)
+            ]).then(function(coords) {
+                var currentCoords = coords[0];
+                var birthCoords = coords[1];
+
+                if (currentCoords && birthCoords) {
+                    // Create bounds to fit both locations
+                    var group = L.featureGroup([
+                        L.marker(currentCoords),
+                        L.marker(birthCoords)
+                    ]);
+                    map.fitBounds(group.getBounds().pad(0.2));
+                } else if (currentCoords) {
+                    map.setView(currentCoords, 8);
+                } else if (birthCoords) {
+                    map.setView(birthCoords, 8);
+                }
+
+                // Update map with highlighting
+                updateMap();
+            });
+        }
+
         // Search locations using Nominatim API
         function searchLocations(query, suggestionsContainer, inputElement) {
             showLoadingIndicator(suggestionsContainer);
@@ -743,7 +954,7 @@ const firebaseConfig = {
                 })
                 .then(function(data) {
                     if (data && data.length > 0) {
-                        currentSuggestions = data;
+                        currentSugg estions = data;
                         displaySuggestions(data, suggestionsContainer, inputElement);
                         showMessage('Found ' + data.length + ' suggestions', 'info');
                     } else {
@@ -880,6 +1091,7 @@ const firebaseConfig = {
                     currentLocation: document.getElementById('currentLocation').value.trim(),
                     birthPlace: document.getElementById('birthPlace').value.trim(),
                     notes: document.getElementById('notes').value.trim(),
+                    profilePicture: currentProfilePicture,
                     timestamp: new Date().toISOString()
                 };
 
@@ -894,6 +1106,7 @@ const firebaseConfig = {
                     updateTeamMember(editingId, formData).then(function() {
                         showMessage('Team member updated successfully!', 'success');
                         document.getElementById('teamForm').reset();
+                        removeProfilePicture();
                         cancelEdit();
                         loadTeamMembers();
                     });
@@ -902,6 +1115,7 @@ const firebaseConfig = {
                     addTeamMember(formData).then(function() {
                         showMessage('Team member added successfully!', 'success');
                         document.getElementById('teamForm').reset();
+                        removeProfilePicture();
                         cancelEdit();
                         loadTeamMembers();
                     });
@@ -1028,9 +1242,18 @@ const firebaseConfig = {
             }
 
             container.innerHTML = teamMembers.map(function(member) {
+                var avatarHtml = member.profilePicture ? 
+                    '<img src="' + member.profilePicture + '" class="member-avatar">' :
+                    '<div class="member-avatar" style="background: #e0e0e0; display: flex; align-items: center; justify-content: center; color: #666;">👤</div>';
+
                 return '<div class="team-member">' +
-                    '<div class="member-name">' + member.name + '</div>' +
-                    '<div class="member-role">' + member.role + '</div>' +
+                    '<div class="member-header">' +
+                        avatarHtml +
+                        '<div>' +
+                            '<div class="member-name">' + member.name + '</div>' +
+                            '<div class="member-role">' + member.role + '</div>' +
+                        '</div>' +
+                    '</div>' +
                     '<div class="member-locations">' +
                         '📍 Current: ' + member.currentLocation + '<br>' +
                         '🏠 Born: ' + member.birthPlace +
@@ -1057,9 +1280,18 @@ const firebaseConfig = {
             }
 
             container.innerHTML = teamMembers.map(function(member) {
-                return '<div class="team-member view-only">' +
-                    '<div class="member-name">' + member.name + '</div>' +
-                    '<div class="member-role">' + member.role + '</div>' +
+                var avatarHtml = member.profilePicture ? 
+                    '<img src="' + member.profilePicture + '" class="member-avatar">' :
+                    '<div class="member-avatar" style="background: #e0e0e0; display: flex; align-items: center; justify-content: center; color: #666;">👤</div>';
+
+                return '<div class="team-member view-only" data-member-id="' + member.id + '" onclick="highlightTeamMember(\'' + member.id + '\')">' +
+                    '<div class="member-header">' +
+                        avatarHtml +
+                        '<div>' +
+                            '<div class="member-name">' + member.name + '</div>' +
+                            '<div class="member-role">' + member.role + '</div>' +
+                        '</div>' +
+                    '</div>' +
                     '<div class="member-locations">' +
                         '📍 Current: ' + member.currentLocation + '<br>' +
                         '🏠 Born: ' + member.birthPlace +
@@ -1080,6 +1312,15 @@ const firebaseConfig = {
             document.getElementById('birthPlace').value = member.birthPlace;
             document.getElementById('notes').value = member.notes || '';
 
+            // Load profile picture if exists
+            if (member.profilePicture) {
+                currentProfilePicture = member.profilePicture;
+                updateProfilePreview(currentProfilePicture);
+                document.getElementById('removePhotoBtn').style.display = 'inline-block';
+            } else {
+                removeProfilePicture();
+            }
+
             editingId = id;
             document.getElementById('cancelEdit').style.display = 'block';
             document.querySelector('.btn[type="submit"]').textContent = '💾 Update Team Member';
@@ -1092,192 +1333,4 @@ const firebaseConfig = {
             document.getElementById('cancelEdit').style.display = 'none';
             document.querySelector('.btn[type="submit"]').textContent = '➕ Add Team Member';
             document.getElementById('teamForm').reset();
-            showMessage('Edit cancelled', 'info');
-        }
-
-        // Geocoding function
-        function geocodeLocation(location) {
-            return fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(location))
-                .then(function(response) {
-                    return response.json();
-                })
-                .then(function(data) {
-                    if (data && data.length > 0) {
-                        return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-                    }
-                    return null;
-                })
-                .catch(function(error) {
-                    console.error('Geocoding error:', error);
-                    return null;
-                });
-        }
-
-        // Update map with team members
-        function updateMap() {
-            if (!map) return;
             
-            showMessage('Updating map', 'info');
-            
-            markers.forEach(function(marker) { map.removeLayer(marker); });
-            connectionLines.forEach(function(line) { map.removeLayer(line); });
-            markers = [];
-            connectionLines = [];
-
-            var promises = teamMembers.map(function(member) {
-                return Promise.all([
-                    geocodeLocation(member.currentLocation),
-                    geocodeLocation(member.birthPlace)
-                ]).then(function(coords) {
-                    var currentCoords = coords[0];
-                    var birthCoords = coords[1];
-
-                    // Always show current location markers
-                    if (currentCoords) {
-                        var currentMarker = L.marker(currentCoords, {
-                            icon: L.divIcon({
-                                className: 'custom-marker',
-                                html: '<div style="background: #007bff; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">📍</div>',
-                                iconSize: [30, 30],
-                                iconAnchor: [15, 15]
-                            })
-                        }).addTo(map);
-
-                        currentMarker.bindPopup(
-                            '<div style="font-family: \'Segoe UI\', sans-serif;">' +
-                                '<h4 style="margin: 0 0 8px 0; color: #333;">' + member.name + '</h4>' +
-                                '<p style="margin: 0 0 4px 0; color: #007bff; font-weight: bold;">' + member.role + '</p>' +
-                                '<p style="margin: 0 0 4px 0; font-size: 12px;"><strong>Current:</strong> ' + member.currentLocation + '</p>' +
-                                '<p style="margin: 0 0 4px 0; font-size: 12px;"><strong>Born:</strong> ' + member.birthPlace + '</p>' +
-                                (member.notes ? '<p style="margin: 4px 0 0 0; font-size: 11px; color: #666; font-style: italic;">' + member.notes + '</p>' : '') +
-                            '</div>'
-                        );
-                        markers.push(currentMarker);
-                    }
-
-                    // Only show birth place markers and connection lines when showLines is true
-                    if (showLines && birthCoords) {
-                        var birthMarker = L.marker(birthCoords, {
-                            icon: L.divIcon({
-                                className: 'custom-marker',
-                                html: '<div style="background: #28a745; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">🏠</div>',
-                                iconSize: [25, 25],
-                                iconAnchor: [12.5, 12.5]
-                            })
-                        }).addTo(map);
-
-                        birthMarker.bindPopup(
-                            '<div style="font-family: \'Segoe UI\', sans-serif;">' +
-                                '<h4 style="margin: 0 0 8px 0; color: #333;">' + member.name + '</h4>' +
-                                '<p style="margin: 0 0 4px 0; color: #28a745; font-weight: bold;">Birth Place</p>' +
-                                '<p style="margin: 0; font-size: 12px;">' + member.birthPlace + '</p>' +
-                            '</div>'
-                        );
-                        markers.push(birthMarker);
-                    }
-
-                    // Only show connection lines when showLines is true
-                    if (showLines && currentCoords && birthCoords) {
-                        var line = L.polyline([currentCoords, birthCoords], {
-                            color: '#ff6b6b',
-                            weight: 2,
-                            opacity: 0.7,
-                            dashArray: '10, 10'
-                        }).addTo(map);
-                        connectionLines.push(line);
-                    }
-                });
-            });
-
-            Promise.all(promises).then(function() {
-                if (markers.length > 0) {
-                    var group = new L.featureGroup(markers);
-                    map.fitBounds(group.getBounds().pad(0.1));
-                }
-                showMessage('Map updated with ' + markers.length + ' markers', 'info');
-            });
-        }
-
-        // Toggle connection lines and birth places
-        function toggleConnectionLines() {
-            showLines = !showLines;
-            var button = document.getElementById('toggleLines');
-            
-            if (showLines) {
-                button.textContent = '🔗 Hide Birth Places & Lines';
-                button.className = 'toggle-btn';
-            } else {
-                button.textContent = '🔗 Show Birth Places & Lines';
-                button.className = 'toggle-btn inactive';
-            }
-
-            updateMap();
-        }
-
-        // Initialize everything when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            showMessage('DOM loaded, initializing application', 'info');
-            
-            initializeFirebase();
-            initializeMap();
-            checkAdminMode();
-            loadTeamMembers();
-            
-            var teamForm = document.getElementById('teamForm');
-            if (teamForm) {
-                teamForm.addEventListener('submit', handleFormSubmit);
-            }
-            
-            var toggleLinesBtn = document.getElementById('toggleLines');
-            if (toggleLinesBtn) {
-                toggleLinesBtn.addEventListener('click', toggleConnectionLines);
-            }
-            
-            var cancelEditBtn = document.getElementById('cancelEdit');
-            if (cancelEditBtn) {
-                cancelEditBtn.addEventListener('click', cancelEdit);
-            }
-            
-            setupAutocomplete('currentLocation');
-            setupAutocomplete('birthPlace');
-            
-            if (!firebaseInitialized) {
-                var existingMembers = JSON.parse(localStorage.getItem('teamMembers') || '[]');
-                if (existingMembers.length === 0) {
-                    var demoMembers = [
-                        {
-                            id: '1',
-                            name: 'Sarah Chen',
-                            role: 'Senior Developer',
-                            currentLocation: 'Toronto, Canada',
-                            birthPlace: 'Shanghai, China',
-                            notes: 'Full-stack developer specializing in React and Node.js'
-                        },
-                        {
-                            id: '2',
-                            name: 'Marcus Johnson',
-                            role: 'Product Manager',
-                            currentLocation: 'New York, USA',
-                            birthPlace: 'Lagos, Nigeria',
-                            notes: 'Passionate about user experience and agile methodologies'
-                        }
-                    ];
-                    
-                    localStorage.setItem('teamMembers', JSON.stringify(demoMembers));
-                    showMessage('Demo data added', 'info');
-                    loadTeamMembers();
-                }
-            }
-            
-            showMessage('Application initialization complete', 'success');
-        });
-
-        // Add debug access via console
-        window.enableDebug = function() {
-            console.log('Debug mode enabled - check browser console for detailed logs');
-        };
-        
-        console.log('Team Location Map loaded. Type "enableDebug()" to see debug information.');
-    </script>
-</body>
-</html>
