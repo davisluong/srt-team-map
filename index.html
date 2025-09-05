@@ -1052,7 +1052,14 @@ const firebaseConfig = {
             var questions = [];
             
             if (member.elementarySchool) {
-                questions.push('<div class="question-item"><span class="question-label">Elementary:</span> ' + member.elementarySchool + '</div>');
+                questions.push('<div class="question-item"><style>
+            .my_text
+            {
+                font-family:    Arial, Helvetica, sans-serif;
+                font-size:      40px;
+                font-weight:    bold;
+            }
+        </style><span class="question-label">Elementary:</span> ' + member.elementarySchool + '</div>');
             }
             if (member.highSchool) {
                 questions.push('<div class="question-item"><span class="question-label">High School:</span> ' + member.highSchool + '</div>');
@@ -1064,7 +1071,7 @@ const firebaseConfig = {
                 questions.push('<div class="question-item"><span class="question-label">Places Lived:</span> ' + member.placesLived + '</div>');
             }
             if (member.canadianProvinces) {
-                questions.push('<div class="question-item"><span class="question-label">Canadian Provinces:</span> ' + member.canadianProvinces + '</div>');
+                questions.push('<div class="question-item"><span class="question-label">Provinces Visited:</span> ' + member.canadianProvinces + '</div>');
             }
             if (member.countriesVisited) {
                 questions.push('<div class="question-item"><span class="question-label">Countries Visited:</span> ' + member.countriesVisited + '</div>');
