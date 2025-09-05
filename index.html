@@ -658,32 +658,17 @@ Photo || '';
             setupAutocomplete('birthPlace');
             setupProfilePhotoPreview();
             
-            // Add demo data if none exists
-            var existingMembers = JSON.parse(localStorage.getItem('teamMembers') || '[]');
-            if (existingMembers.length === 0) {
-                var demoMembers = [
-                    {
-                        id: '1',
-                        name: 'Sarah Chen',
-                        role: 'Senior Developer',
-                        currentLocation: 'Toronto, Canada',
-                        birthPlace: 'Shanghai, China',
-                        profilePhoto: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-                        notes: 'Full-stack developer specializing in React and Node.js'
-                    },
-                    {
-                        id: '2',
-                        name: 'Marcus Johnson',
-                        role: 'Product Manager',
-                        currentLocation: 'New York, USA',
-                        birthPlace: 'Lagos, Nigeria',
-                        profilePhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-                        notes: 'Passionate about user experience and agile methodologies'
-                    }
-                ];
-                localStorage.setItem('teamMembers', JSON.stringify(demoMembers));
-                loadTeamMembers();
-            }
+            // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCgEh2UhEZFCFtn_2h_scIA8YHYTPHPy2M",
+  authDomain: "srt-team-map.firebaseapp.com",
+  databaseURL: "https://srt-team-map-default-rtdb.firebaseio.com",
+  projectId: "srt-team-map",
+  storageBucket: "srt-team-map.firebasestorage.app",
+  messagingSenderId: "1041786833700",
+  appId: "1:1041786833700:web:a4927a4e88470cd55d81b1",
+  measurementId: "G-J2RNT7MSR1"
+};
         });
     </script>
 </body>
