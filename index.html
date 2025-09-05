@@ -480,8 +480,8 @@
         </button>
 
         <div class="header">
-            <h2>🌍 SR&T Team Location Map</h2>
-            <p>A place called home</p>
+            <h1>🌍 SR&T Team Location Map</h1>
+            <p><h2>A place called home</h2></p>
         </div>
 
         <div class="main-content" id="mainContent">
@@ -1092,8 +1092,8 @@ const firebaseConfig = {
                     '<div class="member-locations">' +
                         '📍 Current: ' + member.currentLocation + '<br>' +
                         '🏠 Born: ' + member.birthPlace +
-                    '</div>' +
                     generateQuestionsHTML(member) +
+                    '</div>' +
                     '<div class="member-actions">' +
                         '<button class="btn btn-secondary btn-small" onclick="editTeamMember(\'' + member.id + '\')">✏️ Edit</button>' +
                         '<button class="btn btn-danger btn-small" onclick="deleteTeamMember(\'' + member.id + '\')">🗑️ Delete</button>' +
@@ -1121,8 +1121,9 @@ const firebaseConfig = {
                     '<div class="member-locations">' +
                         '📍 Current: ' + member.currentLocation + '<br>' +
                         '🏠 Born: ' + member.birthPlace +
-                    '</div>' +
                     generateQuestionsHTML(member) +
+                    '</div>' +
+                    
                 '</div>';
             }).join('');
         }
