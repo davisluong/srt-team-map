@@ -1062,7 +1062,7 @@ const firebaseConfig = {
                         '📍 Current: ' + member.currentLocation + '<br>' +
                         '🏠 Born: ' + member.birthPlace +
                     '</div>' +
-                    (member.notes ? '<div style="font-size: 12px; color: #666; margin-bottom: 8px;">' + member.notes.replaceAll("\\n", "\n") + '</div>' : '') +
+                    (member.notes.replaceAll("\\n", "\n") ? '<div style="font-size: 12px; color: #666; margin-bottom: 8px;">' + member.notes.replaceAll("\\n", "\n") + '</div>' : '') +
                 '</div>';
             }).join('');
         }
