@@ -548,11 +548,40 @@
                         </div>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="notes">Notes</label>
-                        <textarea id="notes" placeholder="Additional information..."></textarea>
+                     <div class="questions-section">
+                        <h3>📋 Additional Information</h3>
+                        
+                        <div class="question-group">
+                            <label for="elementarySchool">Where did you go to Elementary School?</label>
+                            <input type="text" id="elementarySchool" placeholder="City, Country">
+                        </div>
+                        
+                        <div class="question-group">
+                            <label for="highSchool">Where did you go to High School?</label>
+                            <input type="text" id="highSchool" placeholder="City, Country">
+                        </div>
+                        
+                        <div class="question-group">
+                            <label for="postSecondary">Where did you go to Post Secondary?</label>
+                            <input type="text" id="postSecondary" placeholder="City, Country">
+                        </div>
+                        
+                        <div class="question-group">
+                            <label for="placesLived">How many places have you lived?</label>
+                            <input type="text" id="placesLived" placeholder="1,2,3..">
+                        </div>
+                        
+                        <div class="question-group">
+                            <label for="canadianProvinces">How many Canadian provinces have you visited?</label>
+                             <input type="text" id="canadianProvinces" placeholder="1,2,3..">
+                        </div>
+                        
+                        <div class="question-group">
+                            <label for="countriesVisited">How many countries have you visited?</label>
+                            <input type="text" id="countriesVisited" placeholder="1,2,3..">
+                        </div>
                     </div>
-                    
+
                     <button type="submit" class="btn" id="submitBtn">➕ Add Team Member</button>
                     <button type="button" id="cancelEdit" class="btn btn-secondary" style="display: none;">❌ Cancel Edit</button>
                 </form>
@@ -877,7 +906,12 @@ const firebaseConfig = {
                     role: document.getElementById('role').value.trim(),
                     currentLocation: document.getElementById('currentLocation').value.trim(),
                     birthPlace: document.getElementById('birthPlace').value.trim(),
-                    notes: document.getElementById('notes').value.trim(),
+                    elementarySchool: document.getElementById('elementarySchool').value.trim(),
+                    highSchool: document.getElementById('highSchool').value.trim(),
+                    postSecondary: document.getElementById('postSecondary').value.trim(),
+                    placesLived: document.getElementById('placesLived').value,
+                    canadianProvinces: document.getElementById('canadianProvinces').value,
+                    countriesVisited: document.getElementById('countriesVisited').value,
                     timestamp: new Date().toISOString()
                 };
 
@@ -1013,6 +1047,32 @@ const firebaseConfig = {
             }
         }
 
+        // Generate questions HTML for display
+        function generateQuestionsHTML(member) {
+            var questions = [];
+            
+            if (member.elementarySchool) {
+                questions.push('<div class="question-item"><span class="question-label">Elementary:</span> ' + member.elementarySchool + '</div>');
+            }
+            if (member.highSchool) {
+                questions.push('<div class="question-item"><span class="question-label">High School:</span> ' + member.highSchool + '</div>');
+            }
+            if (member.postSecondary) {
+                questions.push('<div class="question-item"><span class="question-label">Post Secondary:</span> ' + member.postSecondary + '</div>');
+            }
+            if (member.placesLived) {
+                questions.push('<div class="question-item"><span class="question-label">Places Lived:</span> ' + member.placesLived + '</div>');
+            }
+            if (member.canadianProvinces) {
+                questions.push('<div class="question-item"><span class="question-label">Canadian Provinces:</span> ' + member.canadianProvinces + '</div>');
+            }
+            if (member.countriesVisited) {
+                questions.push('<div class="question-item"><span class="question-label">Countries Visited:</span> ' + member.countriesVisited + '</div>');
+            }
+            
+            return questions.length > 0 ? '<div class="member-questions">' + questions.join('') + '</div>' : '';
+        }
+
         // Display team members in admin sidebar
         function displayTeamMembers() {
             var container = document.getElementById('teamMembers');
@@ -1033,7 +1093,7 @@ const firebaseConfig = {
                         '📍 Current: ' + member.currentLocation + '<br>' +
                         '🏠 Born: ' + member.birthPlace +
                     '</div>' +
-                    (member.notes ? '<div style="font-size: 12px; color: #666; margin-bottom: 8px;">' + member.notes + '</div>' : '') +
+                    generateQuestionsHTML(member) +
                     '<div class="member-actions">' +
                         '<button class="btn btn-secondary btn-small" onclick="editTeamMember(\'' + member.id + '\')">✏️ Edit</button>' +
                         '<button class="btn btn-danger btn-small" onclick="deleteTeamMember(\'' + member.id + '\')">🗑️ Delete</button>' +
@@ -1062,7 +1122,7 @@ const firebaseConfig = {
                         '📍 Current: ' + member.currentLocation + '<br>' +
                         '🏠 Born: ' + member.birthPlace +
                     '</div>' +
-                    (member.notes ? '<div style="font-size: 12px; color: #666; margin-bottom: 8px;">' + member.notes + '</div>' : '') +
+                    generateQuestionsHTML(member) +
                 '</div>';
             }).join('');
         }
@@ -1076,7 +1136,13 @@ const firebaseConfig = {
             document.getElementById('role').value = member.role;
             document.getElementById('currentLocation').value = member.currentLocation;
             document.getElementById('birthPlace').value = member.birthPlace;
-            document.getElementById('notes').value = member.notes || '';
+            document.getElementById('elementarySchool').value = member.elementarySchool || '';
+            document.getElementById('highSchool').value = member.highSchool || '';
+            document.getElementById('postSecondary').value = member.postSecondary || '';
+            document.getElementById('placesLived').value = member.placesLived || '';
+            document.getElementById('canadianProvinces').value = member.canadianProvinces || '';
+            document.getElementById('countriesVisited').value = member.countriesVisited || '';
+
 
             editingId = id;
             document.getElementById('cancelEdit').style.display = 'block';
