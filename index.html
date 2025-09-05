@@ -1052,14 +1052,7 @@ const firebaseConfig = {
             var questions = [];
             
             if (member.elementarySchool) {
-                questions.push('<div class="question-item"><style>
-            .my_text
-            {
-                font-family:    Arial, Helvetica, sans-serif;
-                font-size:      40px;
-                font-weight:    bold;
-            }
-        </style><span class="question-label">Elementary:</span> ' + member.elementarySchool + '</div>');
+                questions.push('<div class="question-item"><span class="question-label">Elementary:</span> ' + member.elementarySchool + '</div>');
             }
             if (member.highSchool) {
                 questions.push('<div class="question-item"><span class="question-label">High School:</span> ' + member.highSchool + '</div>');
