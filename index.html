@@ -1862,27 +1862,41 @@ function resetMapView() {
 
         // Initialize everything when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
-            showMessage('DOM loaded, initializing application', 'info');
-            
-            initializeFirebase();
+    showMessage('DOM loaded, initializing application', 'info');
+    
+    // Initialize in sequence with error handling
+    try {
+        initializeFirebase();
+        
+        // Wait for DOM to be completely ready
+        setTimeout(function() {
             initializeMap();
             checkAdminMode();
             loadTeamMembers();
-            
-            var teamForm = document.getElementById('teamForm');
-            if (teamForm) {
-                teamForm.addEventListener('submit', handleFormSubmit);
-            }
-            
-            var toggleLinesBtn = document.getElementById('toggleLines');
-            if (toggleLinesBtn) {
-                toggleLinesBtn.addEventListener('click', toggleConnectionLines);
-            }
+            setupEventListeners();
+        }, 200);
+        
+    } catch (error) {
+        console.error('Initialization error:', error);
+        showMessage('Application initialization failed: ' + error.message, 'error');
+    }
+});
 
-			var resetMapBtn = document.getElementById('resetMap');
-if (resetMapBtn) {
-    resetMapBtn.addEventListener('click', resetMapView);
-}
+function setupEventListeners() {
+    var teamForm = document.getElementById('teamForm');
+    if (teamForm) {
+        teamForm.addEventListener('submit', handleFormSubmit);
+    }
+    
+    var toggleLinesBtn = document.getElementById('toggleLines');
+    if (toggleLinesBtn) {
+        toggleLinesBtn.addEventListener('click', toggleConnectionLines);
+    }
+    
+    var resetMapBtn = document.getElementById('resetMap');
+    if (resetMapBtn) {
+        resetMapBtn.addEventListener('click', resetMapView);
+    }
             
             var cancelEditBtn = document.getElementById('cancelEdit');
             if (cancelEditBtn) {
