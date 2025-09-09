@@ -571,6 +571,7 @@
         <button id="resetMap" class="toggle-btn" style="background: #6c757d;">🌍 Reset Map</button>
     </div>
 </div>
+				<div id="map"></div>
             </div>
 
             <!-- Admin Sidebar -->
@@ -1077,23 +1078,36 @@
 
         // Initialize Map with improved options
         function initializeMap() {
-            map = L.map('map', {
-                center: [20, 0],
-                zoom: 2,
-                minZoom: 2,
-                maxZoom: 18,
-                worldCopyJump: true,
-                maxBounds: [[-90, -180], [90, 180]],
-                maxBoundsViscosity: 1.0
-            });
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors',
-                noWrap: true
-            }).addTo(map);
-            
-            showMessage('Map initialized', 'info');
-        }
+    var mapContainer = document.getElementById('map');
+    if (!mapContainer) {
+        console.error('Map container with id "map" not found!');
+        showMessage('Map container not found. Please check HTML structure.', 'error');
+        return;
+    }
+    
+    try {
+        map = L.map('map', {
+            center: [20, 0],
+            zoom: 2,
+            minZoom: 2,
+            maxZoom: 18,
+            worldCopyJump: true,
+            maxBounds: [[-90, -180], [90, 180]],
+            maxBoundsViscosity: 1.0
+        });
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            noWrap: true
+        }).addTo(map);
+        
+        showMessage('Map initialized successfully', 'success');
+    } catch (error) {
+        console.error('Error initializing map:', error);
+        showMessage('Error initializing map: ' + error.message, 'error');
+    }
+}
+
 
         // Check if admin mode is enabled
         function checkAdminMode() {
