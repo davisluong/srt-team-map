@@ -1383,44 +1383,66 @@ function toggleDebugMode() {
     }
 }
 
-		// REPLACED: Enhanced geocoding function with retry logic
-function geocodeLocation(location, retryCount = 0) {
-    debugLog('Geocoding location: ' + location, { retryCount: retryCount });
+// NEW: Function to handle international date line crossing
+function createOptimalPolyline(coord1, coord2) {
+    var lat1 = coord1[0], lon1 = coord1[1];
+    var lat2 = coord2[0], lon2 = coord2[1];
     
-    return fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(location))
-        .then(function(response) {
-            if (!response.ok) {
-                throw new Error('HTTP ' + response.status);
-            }
-            return response.json();
-        })
-        .then(function(data) {
-            if (data && data.length > 0) {
-                var coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-                debugLog('Geocoded successfully: ' + location, { coords: coords });
-                return coords;
-            }
-            debugLog('No results for: ' + location);
-            return null;
-        })
-        .catch(function(error) {
-            console.error('Geocoding error for "' + location + '":', error);
-            debugLog('Geocoding error: ' + location, { error: error.message });
-            
-            // NEW: Retry logic for rate limiting
-            if (retryCount < 2 && (error.message.includes('429') || error.message.includes('HTTP 429'))) {
-                var delay = (retryCount + 1) * 2000; // 2s, 4s delays
-                debugLog('Retrying geocoding after ' + delay + 'ms: ' + location);
-                return new Promise(function(resolve) {
-                    setTimeout(function() {
-                        resolve(geocodeLocation(location, retryCount + 1));
-                    }, delay);
-                });
-            }
-            
-            return null;
-        });
+    // Calculate the difference in longitude
+    var lonDiff = Math.abs(lon2 - lon1);
+    
+    debugLog('Creating line between coordinates', { 
+        from: coord1, 
+        to: coord2, 
+        lonDiff: lonDiff 
+    });
+    
+    // If the longitude difference is greater than 180°, we need to handle date line crossing
+    if (lon1 > 0 && lon2 < 0 && lonDiff > 180) {
+        // Going from positive to negative longitude (crossing date line eastward)
+        var midLat = (lat1 + lat2) / 2;
+        return [
+            L.polyline([[lat1, lon1], [midLat, 180]], {
+                color: '#ff6b6b',
+                weight: 3,
+                opacity: 0.8,
+                dashArray: '10, 10'
+            }),
+            L.polyline([[midLat, -180], [lat2, lon2]], {
+                color: '#ff6b6b',
+                weight: 3,
+                opacity: 0.8,
+                dashArray: '10, 10'
+            })
+        ];
+    } else if (lon1 < 0 && lon2 > 0 && lonDiff > 180) {
+        // Going from negative to positive longitude (crossing date line westward)
+        var midLat = (lat1 + lat2) / 2;
+        return [
+            L.polyline([[lat1, lon1], [midLat, -180]], {
+                color: '#ff6b6b',
+                weight: 3,
+                opacity: 0.8,
+                dashArray: '10, 10'
+            }),
+            L.polyline([[midLat, 180], [lat2, lon2]], {
+                color: '#ff6b6b',
+                weight: 3,
+                opacity: 0.8,
+                dashArray: '10, 10'
+            })
+        ];
+    } else {
+        // Normal case - no date line crossing
+        return [L.polyline([coord1, coord2], {
+            color: '#ff6b6b',
+            weight: 3,
+            opacity: 0.8,
+            dashArray: '10, 10'
+        })];
+    }
 }
+
 
 		
     </script>
