@@ -1469,8 +1469,37 @@
                 showMessage('Error loading team members: ' + error.message, 'error');
             }
         }
-		        // Generate questions HTML for display
-        function generatePopupQuestionsHTML(member) {
+		      // Generate questions HTML for display
+        function generateQuestionsHTML(member) {
+            var questions = [];
+            
+            if (member.elementarySchool) {
+                questions.push('<div class="question-item"><span class="question-label">Elementary:</span> ' + member.elementarySchool + '</div>');
+            }
+            if (member.highSchool) {
+                questions.push('<div class="question-item"><span class="question-label">High School:</span> ' + member.highSchool + '</div>');
+            }
+            if (member.postSecondary) {
+                questions.push('<div class="question-item"><span class="question-label">Post Secondary:</span> ' + member.postSecondary + '</div>');
+            }
+            if (member.placesLived) {
+                questions.push('<div class="question-item"><span class="question-label">Places Lived:</span> ' + member.placesLived + '</div>');
+            }
+            if (member.canadianProvinces) {
+                questions.push('<div class="question-item"><span class="question-label">Provinces Visited:</span> ' + member.canadianProvinces + '</div>');
+            }
+            if (member.countriesVisited) {
+                questions.push('<div class="question-item"><span class="question-label">Countries Visited:</span> ' + member.countriesVisited + '</div>');
+            }
+            
+            return questions.length > 0 ? '<div class="member-questions">' + questions.join('') + '</div>' : '';
+        }
+			
+    return '';
+}
+
+			// Generate questions HTML for map popups (more compact format)
+function generatePopupQuestionsHTML(member) {
     var questions = [];
     
     if (member.elementarySchool) {
@@ -1501,6 +1530,7 @@
     
     return '';
 }
+
 
         // Display team members in admin sidebar
         function displayTeamMembers() {
