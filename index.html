@@ -1342,8 +1342,48 @@ const firebaseConfig = {
         window.enableDebug = function() {
             console.log('Debug mode enabled - check browser console for detailed logs');
         };
-        
         console.log('Team Location Map loaded. Type "enableDebug()" to see debug information.');
+
+		// NEW: Enhanced debug logging variables
+var debugMode = false;
+var debugLog = [];
+
+// NEW: Debug logging function
+function debugLog(message, data) {
+    var timestamp = new Date().toLocaleTimeString();
+    var logEntry = timestamp + ': ' + message;
+    if (data) {
+        logEntry += ' | Data: ' + JSON.stringify(data);
+    }
+    debugLog.push(logEntry);
+    
+    if (debugMode) {
+        console.log(logEntry);
+        updateDebugDisplay();
+    }
+}
+
+// NEW: Update debug display
+function updateDebugDisplay() {
+    var debugContent = document.getElementById('debugContent');
+    if (debugContent) {
+        debugContent.innerHTML = debugLog.slice(-10).join('<br>');
+    }
+}
+
+// NEW: Toggle debug mode
+function toggleDebugMode() {
+    debugMode = !debugMode;
+    var debugInfo = document.getElementById('debugInfo');
+    if (debugMode) {
+        debugInfo.style.display = 'block';
+        updateDebugDisplay();
+    } else {
+        debugInfo.style.display = 'none';
+    }
+}
+
+		
     </script>
 </body>
 </html>
