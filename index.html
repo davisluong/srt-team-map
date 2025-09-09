@@ -1444,6 +1444,7 @@ function createOptimalPolyline(coord1, coord2) {
     }
 }
 
+function testNetworkConnectivity() {\n    fetch('https://nominatim.openstreetmap.org/search?format=json&q=Toronto&limit=1')\n        .then(function(response) {\n            if (response.ok) {\n                networkOnline = true;\n                // Update UI to show network is working\n            }\n        })\n        .catch(function(error) {\n            networkOnline = false;\n            // Switch to offline mode\n        });\n}
 
 												
 	
