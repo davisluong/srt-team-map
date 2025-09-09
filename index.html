@@ -1605,28 +1605,34 @@ function generatePopupQuestionsHTML(member) {
 
         // Display team members in view-only sidebar
         function displayViewOnlyTeamMembers() {
-            var container = document.getElementById('viewOnlyTeamMembers');
-            var count = document.getElementById('viewOnlyMemberCount');
-            
-            if (count) count.textContent = teamMembers.length;
-            
-            if (teamMembers.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #666; font-style: italic;">No team members to display.</p>';
-                return;
-            }
+    var container = document.getElementById('viewOnlyTeamMembers');
+    var count = document.getElementById('viewOnlyMemberCount');
+    
+    if (count) count.textContent = teamMembers.length;
+    
+    if (teamMembers.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #666; font-style: italic;">No team members to display.</p>';
+        return;
+    }
 
-            container.innerHTML = teamMembers.map(function(member) {
-                return '<div class="team-member view-only">' +
-                    '<div class="member-name">' + member.name + '</div>' +
-                    '<div class="member-role">' + member.role + '</div>' +
-                    '<div class="member-locations">' +
-                        '📍 Current: ' + member.currentLocation + '<br>' +
-                        '🏠 Born: ' + member.birthPlace +
-                    generateQuestionsHTML(member) +
-                    '</div>' +
-                '</div>';
-            }).join('');
-        }
+    // Sort team members alphabetically by name
+    var sortedMembers = teamMembers.slice().sort(function(a, b) {
+        return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+    });
+
+    container.innerHTML = sortedMembers.map(function(member) {
+        return '<div class="team-member view-only">' +
+            '<div class="member-name">' + member.name + '</div>' +
+            '<div class="member-role">' + member.role + '</div>' +
+            '<div class="member-locations">' +
+                '📍 Current: ' + member.currentLocation + '<br>' +
+                '🏠 Born: ' + member.birthPlace +
+            generateQuestionsHTML(member) +
+            '</div>' +
+        '</div>';
+    }).join('');
+}
+
 
         // Edit team member
         function editTeamMember(id) {
