@@ -1650,6 +1650,43 @@ function generatePopupQuestionsHTML(member) {
             showMessage('Edit cancelled', 'info');
         }
 
+		// Function to offset markers that are too close together
+function offsetMarker(coords, existingCoords, radius = 0.01) {
+    var lat = coords[0];
+    var lng = coords[1];
+    var attempts = 0;
+    var maxAttempts = 20;
+    
+    while (attempts < maxAttempts) {
+        var tooClose = false;
+        
+        for (var i = 0; i < existingCoords.length; i++) {
+            var existingLat = existingCoords[i][0];
+            var existingLng = existingCoords[i][1];
+            var distance = Math.sqrt(Math.pow(lat - existingLat, 2) + Math.pow(lng - existingLng, 2));
+            
+            if (distance < radius) {
+                tooClose = true;
+                break;
+            }
+        }
+        
+        if (!tooClose) {
+            return [lat, lng];
+        }
+        
+        // Create spiral offset
+        var angle = (attempts * 137.5) * (Math.PI / 180); // Golden angle
+        var distance = radius * Math.sqrt(attempts + 1);
+        lat = coords[0] + (distance * Math.cos(angle));
+        lng = coords[1] + (distance * Math.sin(angle));
+        attempts++;
+    }
+    
+    return [lat, lng];
+}
+
+			
         // Update map with team members
         function updateMap() {
             if (!map) return;
@@ -1657,9 +1694,12 @@ function generatePopupQuestionsHTML(member) {
             showMessage('Updating map', 'info');
             
             markers.forEach(function(marker) { map.removeLayer(marker); });
-            connectionLines.forEach(function(line) { map.removeLayer(line); });
-            markers = [];
-            connectionLines = [];
+connectionLines.forEach(function(line) { map.removeLayer(line); });
+markers = [];
+connectionLines = [];
+var usedCurrentCoords = []; // Track used coordinates
+var usedBirthCoords = [];   // Track used coordinates
+
 
             var promises = teamMembers.map(function(member) {
                 // Use manual coordinates if available, otherwise geocode
@@ -1677,7 +1717,12 @@ function generatePopupQuestionsHTML(member) {
 
                     // Always show current location markers
                     if (currentCoords) {
-                        var currentMarker = L.marker(currentCoords, {
+    // Offset if too close to existing markers
+    var adjustedCurrentCoords = offsetMarker(currentCoords, usedCurrentCoords);
+    usedCurrentCoords.push(adjustedCurrentCoords);
+    
+    var currentMarker = L.marker(adjustedCurrentCoords, {
+
                             icon: L.divIcon({
                                 className: 'custom-marker',
                                 html: '<div style="background: #007bff; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">📍</div>',
@@ -1710,7 +1755,12 @@ currentMarker.bindTooltip(member.name, {
 
                     // Only show birth place markers and connection lines when showLines is true
                     if (showLines && birthCoords) {
-                        var birthMarker = L.marker(birthCoords, {
+    // Offset if too close to existing markers
+    var adjustedBirthCoords = offsetMarker(birthCoords, usedBirthCoords);
+    usedBirthCoords.push(adjustedBirthCoords);
+    
+    var birthMarker = L.marker(adjustedBirthCoords, {
+
                             icon: L.divIcon({
                                 className: 'custom-marker',
                                 html: '<div style="background: #28a745; color: white; border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">🏠</div>',
@@ -1739,8 +1789,8 @@ birthMarker.bindTooltip(member.name + ' (Birth Place)', {
                     }
 
                     // Only show connection lines when showLines is true
-                    if (showLines && currentCoords && birthCoords) {
-                        var polylines = createOptimalPolyline(currentCoords, birthCoords);
+                    if (showLines && adjustedCurrentCoords && adjustedBirthCoords) {
+   					 var polylines = createOptimalPolyline(adjustedCurrentCoords, adjustedBirthCoords);
                         polylines.forEach(function(polyline) {
                             polyline.addTo(map);
                             connectionLines.push(polyline);
