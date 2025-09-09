@@ -1010,7 +1010,7 @@
         function showMessage(message, type) {
             type = type || 'info';
             console.log('[' + type.toUpperCase() + '] ' + message);
-            debugLog(message);
+            addDebugLog(message);
             
             if (type === 'success') {
                 var successEl = document.getElementById('successMessage');
