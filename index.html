@@ -540,6 +540,15 @@
     border-top-color: rgba(0, 0, 0, 0.8) !important;
 }
 
+		.toggle-btn.reset {
+    background: #6c757d;
+}
+
+.toggle-btn.reset:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
     </style>
 </head>
 <body>
@@ -556,10 +565,12 @@
                 <div class="main-content" id="mainContent">
             <div class="map-container">
                 <div class="controls">
-                    <h3>World Map</h3>
-                    <button id="toggleLines" class="toggle-btn">🔗 Hide Birth Places</button>
-                </div>
-                <div id="map"></div>
+    <h3>World Map</h3>
+    <div style="display: flex; gap: 10px;">
+        <button id="toggleLines" class="toggle-btn">🔗 Hide Birth Places</button>
+        <button id="resetMap" class="toggle-btn" style="background: #6c757d;">🌍 Reset Map</button>
+    </div>
+</div>
             </div>
 
             <!-- Admin Sidebar -->
@@ -1824,6 +1835,17 @@ birthMarker.bindTooltip(member.name + ' (Birth Place)', {
             updateMap();
         }
 
+			// Reset map to world view
+function resetMapView() {
+    if (!map) return;
+    
+    // Reset to world view
+    map.setView([20, 0], 2);
+    
+    // Optional: Add a brief message
+    showMessage('Map reset to world view', 'info');
+}
+
         // Initialize everything when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
             showMessage('DOM loaded, initializing application', 'info');
@@ -1842,6 +1864,11 @@ birthMarker.bindTooltip(member.name + ' (Birth Place)', {
             if (toggleLinesBtn) {
                 toggleLinesBtn.addEventListener('click', toggleConnectionLines);
             }
+
+			var resetMapBtn = document.getElementById('resetMap');
+if (resetMapBtn) {
+    resetMapBtn.addEventListener('click', resetMapView);
+}
             
             var cancelEditBtn = document.getElementById('cancelEdit');
             if (cancelEditBtn) {
