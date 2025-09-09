@@ -1244,14 +1244,12 @@ const firebaseConfig = {
 
                     // Only show connection lines when showLines is true
                     if (showLines && currentCoords && birthCoords) {
-                        var line = L.polyline([currentCoords, birthCoords], {
-                            color: '#ff6b6b',
-                            weight: 2,
-                            opacity: 0.7,
-                            dashArray: '10, 10'
-                        }).addTo(map);
-                        connectionLines.push(line);
-                    }
+    var polylines = createOptimalPolyline(currentCoords, birthCoords);
+    polylines.forEach(function(polyline) {
+        polyline.addTo(map);
+        connectionLines.push(polyline);
+    });
+}
                 });
             });
 
