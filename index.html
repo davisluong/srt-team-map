@@ -549,47 +549,6 @@
     transform: translateY(-2px);
 }
 
-		.sidebar-toggle-btn {
-    background: #667eea;
-    color: white;
-    border: none;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.sidebar-toggle-btn:hover {
-    background: #5a6fd8;
-    transform: scale(1.1);
-}
-
-.view-only-sidebar.collapsed {
-    width: 50px !important;
-    overflow: hidden;
-}
-
-.main-content.sidebar-collapsed {
-    grid-template-columns: 1fr 50px;
-}
-
-.collapsed-indicator {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    text-align: center;
-    padding: 20px 0;
-    color: #667eea;
-    font-weight: bold;
-    font-size: 12px;
-    cursor: pointer;
-}
-
 
     </style>
 </head>
@@ -736,15 +695,8 @@
             <!-- View-Only Sidebar -->
             <div class="view-only-sidebar" id="viewOnlySidebar" style="display: none;">
     <div class="view-only-info">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h3>Team Directory</h3>
-                <p>Explore our team members and their locations on the map.</p>
-            </div>
-            <button id="toggleSidebar" class="sidebar-toggle-btn" onclick="toggleSidebar()">
-                ◀
-            </button>
-        </div>
+        <h3>Team Directory</h3>
+        <p>Explore our team members and their locations on the map.</p>
     </div>
 
                 <h2>👥 Our Team (<span id="viewOnlyMemberCount">0</span>)</h2>
