@@ -1853,10 +1853,12 @@ birthMarker.bindTooltip(member.name + ' (Birth Place)', {
 function resetMapView() {
     if (!map) return;
     
-    // Reset to world view
-    map.setView([20, 0], 2);
+    // Smooth zoom out with animation
+    map.flyTo([20, 0], 2, {
+        duration: 1.5,
+        easeLinearity: 0.25
+    });
     
-    // Optional: Add a brief message
     showMessage('Map reset to world view', 'info');
 }
 
