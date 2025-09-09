@@ -63,15 +63,26 @@
         }
 
         .main-content {
-            display: grid;
-            grid-template-columns: 1fr 400px;
-            gap: 20px;
-            height: calc(100vh - 150px);
-        }
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 20px;
+    height: calc(100vh - 150px); /* Ensure proper height */
+    max-height: calc(100vh - 150px);
+}
 
-        .main-content.view-only {
-            grid-template-columns: 1fr 350px;
-        }
+.main-content.view-only {
+    grid-template-columns: 1fr 350px;
+}
+
+		.team-member.view-only {
+    cursor: default;
+    flex-shrink: 0; /* Prevent cards from shrinking */
+    min-height: fit-content;
+}
+
+.team-member.view-only:hover {
+    transform: none;
+}
 
         .map-container {
             background: white;
@@ -132,13 +143,16 @@
             font-size: 1.5rem;
         }
 
-        .view-only-sidebar {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            overflow-y: auto;
-        }
+      .view-only-sidebar {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 170px); /* Set specific height */
+    max-height: calc(100vh - 170px);
+}
 
         .view-only-sidebar h2 {
             color: #333;
@@ -560,24 +574,41 @@
 }
 
 .sidebar-header {
-    padding: 20px 20px 10px 20px;
+    padding: 20px 20px 15px 20px; /* Added bottom padding */
     background: white;
-    border-bottom: 1px solid #e0e0e0;
-    flex-shrink: 0; /* Prevents header from shrinking */
+    border-bottom: 2px solid #e0e0e0; /* Made border more visible */
+    flex-shrink: 0;
 }
 
 .sidebar-content {
-    flex: 1; /* Takes remaining space */
-    overflow-y: auto; /* Only this section scrolls */
-    padding: 0 20px 20px 20px;
+    flex: 1;
+    overflow-y: auto; /* Force scrolling */
+    overflow-x: hidden;
+    padding: 15px 20px 20px 20px; /* Added top padding for space */
+    min-height: 0; /* Important for flex scrolling */
 }
 
 .sidebar-header h2 {
     color: #333;
-    margin: 15px 0 0 0;
+    margin: 20px 0 0 0; /* Increased top margin for space */
     text-align: center;
     font-size: 1.3rem;
+    padding-bottom: 10px; /* Added bottom padding */
 }
+
+		/* Ensure team members container is scrollable */
+#viewOnlyTeamMembers {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Space between team member cards */
+}
+
+/* Force scrollbar to always show when needed */
+.sidebar-content {
+    scrollbar-width: thin;
+    scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
 
 .view-only-info {
     background: #e3f2fd;
@@ -597,17 +628,17 @@
 
 /* Custom scrollbar for better appearance */
 .sidebar-content::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
 }
 
 .sidebar-content::-webkit-scrollbar-track {
     background: #f1f1f1;
-    border-radius: 3px;
+    border-radius: 4px;
 }
 
 .sidebar-content::-webkit-scrollbar-thumb {
     background: #c1c1c1;
-    border-radius: 3px;
+    border-radius: 4px;
 }
 
 .sidebar-content::-webkit-scrollbar-thumb:hover {
