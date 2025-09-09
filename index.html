@@ -1445,15 +1445,6 @@ function createOptimalPolyline(coord1, coord2) {
 }
 
 
-		// Toggle manual coordinates for each location
-function toggleManualCoords(type) {\n    manualCoordsMode[type] = !manualCoordsMode[type];\n    var coordsDiv = document.getElementById(type + 'Coords');\n    // Show/hide coordinate input fields\n}
-
-function testNetworkConnectivity() {\n    fetch('https://nominatim.openstreetmap.org/search?format=json&q=Toronto&limit=1')\n        .then(function(response) {\n            if (response.ok) {\n                networkOnline = true;\n                // Update UI to show network is working\n            }\n        })\n        .catch(function(error) {\n            networkOnline = false;\n            // Switch to offline mode\n        });\n}
-
-function geocodeLocationWithFallback(location) {\n    // First try offline coordinates\n    var cleanLocation = location.toLowerCase().trim();\n    if (cityCoordinates[cleanLocation]) {\n        return Promise.resolve(cityCoordinates[cleanLocation]);\n    }\n    \n    // Try partial matches\n    // If network available, try API\n    // Otherwise return null\n}
-
-function showOfflineSuggestions(query, suggestionsContainer, inputElement) {\n    var matches = [];\n    for (var city in cityCoordinates) {\n        if (city.includes(cleanQuery)) {\n            matches.push({ display_name: city, offline: true });\n        }\n    }\n    // Display offline matches\n}
-
 												
 	
     </script>
