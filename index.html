@@ -1559,62 +1559,31 @@
             }
         }
 
-			var sidebarCollapsed = false;
+			var sidebarHidden = false;
 
 function toggleSidebar() {
     var sidebar = document.getElementById('viewOnlySidebar');
     var mainContent = document.getElementById('mainContent');
-    var toggleBtn = document.getElementById('toggleSidebar');
     
-    sidebarCollapsed = !sidebarCollapsed;
+    sidebarHidden = !sidebarHidden;
     
-    if (sidebarCollapsed) {
-        // Collapse sidebar
-        sidebar.classList.add('collapsed');
-        mainContent.classList.add('sidebar-collapsed');
-        toggleBtn.innerHTML = '▶';
-        toggleBtn.title = 'Show Team Directory';
-        
-        // Hide content and show vertical text
-        var membersList = document.getElementById('viewOnlyTeamMembers');
-        var info = sidebar.querySelector('.view-only-info');
-        
-        membersList.style.display = 'none';
-        info.innerHTML = '<div class="collapsed-indicator" onclick="toggleSidebar()">TEAM</div>';
-        
+    if (sidebarHidden) {
+        sidebar.style.display = 'none';
+        mainContent.style.gridTemplateColumns = '1fr';
     } else {
-        // Expand sidebar
-        sidebar.classList.remove('collapsed');
-        mainContent.classList.remove('sidebar-collapsed');
-        toggleBtn.innerHTML = '◀';
-        toggleBtn.title = 'Hide Team Directory';
-        
-        // Restore content
-        var membersList = document.getElementById('viewOnlyTeamMembers');
-        membersList.style.display = 'block';
-        
-        // Restore original header
-        var info = sidebar.querySelector('.view-only-info');
-        info.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h3>Team Directory</h3>
-                    <p>Explore our team members and their locations on the map.</p>
-                </div>
-                <button id="toggleSidebar" class="sidebar-toggle-btn" onclick="toggleSidebar()">
-                    ◀
-                </button>
-            </div>
-        `;
+        sidebar.style.display = 'block';
+        mainContent.classList.add('view-only');
     }
     
-    // Refresh map size after sidebar toggle
+    // Refresh map size
     if (map) {
         setTimeout(function() {
             map.invalidateSize();
-        }, 300);
+        }, 100);
     }
 }
+
+		
 
 			
 		      // Generate questions HTML for display
