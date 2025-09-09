@@ -969,13 +969,13 @@
                 return [
                     L.polyline([[lat1, lon1], [midLat, 180]], {
                         color: '#ff6b6b',
-                        weight: 3,
+                        weight: 2,
                         opacity: 0.8,
                         dashArray: '10, 10'
                     }),
                     L.polyline([[midLat, -180], [lat2, lon2]], {
                         color: '#ff6b6b',
-                        weight: 3,
+                        weight: 2,
                         opacity: 0.8,
                         dashArray: '10, 10'
                     })
@@ -986,13 +986,13 @@
                 return [
                     L.polyline([[lat1, lon1], [midLat, -180]], {
                         color: '#ff6b6b',
-                        weight: 3,
+                        weight: 2,
                         opacity: 0.8,
                         dashArray: '10, 10'
                     }),
                     L.polyline([[midLat, 180], [lat2, lon2]], {
                         color: '#ff6b6b',
-                        weight: 3,
+                        weight: 2,
                         opacity: 0.8,
                         dashArray: '10, 10'
                     })
@@ -1001,7 +1001,7 @@
                 // Normal case - no date line crossing
                 return [L.polyline([coord1, coord2], {
                     color: '#ff6b6b',
-                    weight: 3,
+                    weight: 2,
                     opacity: 0.8,
                     dashArray: '10, 10'
                 })];
