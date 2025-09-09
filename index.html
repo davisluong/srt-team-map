@@ -1559,31 +1559,7 @@
             }
         }
 
-			var sidebarHidden = false;
-
-function toggleSidebar() {
-    var sidebar = document.getElementById('viewOnlySidebar');
-    var mainContent = document.getElementById('mainContent');
-    
-    sidebarHidden = !sidebarHidden;
-    
-    if (sidebarHidden) {
-        sidebar.style.display = 'none';
-        mainContent.style.gridTemplateColumns = '1fr';
-    } else {
-        sidebar.style.display = 'block';
-        mainContent.classList.add('view-only');
-    }
-    
-    // Refresh map size
-    if (map) {
-        setTimeout(function() {
-            map.invalidateSize();
-        }, 100);
-    }
-}
-
-		
+			var sidebarHidden = false;	
 
 			
 		      // Generate questions HTML for display
