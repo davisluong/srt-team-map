@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SR&T Team Location Map</title>
+    <title>SR&T Team Location Map - Network Fixed</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * {
@@ -63,7 +62,6 @@
             border-color: rgba(255,255,255,0.5);
         }
 
-        /* View-only mode styles */
         .main-content {
             display: grid;
             grid-template-columns: 1fr 400px;
@@ -177,12 +175,33 @@
             border-color: #667eea;
         }
 
-        .form-group textarea {
-            resize: vertical;
-            min-height: 80px;
+        .coordinates-input {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 5px;
         }
 
-        /* Autocomplete Styles */
+        .coordinates-input input {
+            padding: 8px;
+            font-size: 12px;
+        }
+
+        .manual-coords-toggle {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 11px;
+            margin-top: 5px;
+        }
+
+        .manual-coords-toggle:hover {
+            background: #138496;
+        }
+
         .autocomplete-container {
             position: relative;
         }
@@ -346,6 +365,28 @@
             color: #c62828;
         }
 
+        .network-status {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 12px;
+        }
+
+        .network-status.offline {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        .network-status.online {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
         .view-only-info {
             background: #e3f2fd;
             color: #1565c0;
@@ -384,6 +425,19 @@
             font-size: 12px;
             border: 1px solid #f5c6cb;
             display: none;
+        }
+
+        .debug-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 11px;
+            font-family: monospace;
+            max-height: 150px;
+            overflow-y: auto;
         }
 
         @media (max-width: 1024px) {
@@ -484,7 +538,7 @@
             <p><h2>A place called home</h2></p>
         </div>
 
-        <div class="main-content" id="mainContent">
+                <div class="main-content" id="mainContent">
             <div class="map-container">
                 <div class="controls">
                     <h3>World Map</h3>
@@ -496,21 +550,24 @@
             <!-- Admin Sidebar -->
             <div class="sidebar" id="sidebar">
                 <div class="setup-instructions" id="setupInstructions">
-                    <h3>🚀 Setup Instructions</h3>
-                    <p><strong>1. Firebase Setup:</strong></p>
-                    <p>• Create a Firebase project at <code>console.firebase.google.com</code></p>
-                    <p>• Enable Firestore Database</p>
-                    <p>• Replace the config below with your Firebase config</p>
-                    <p><strong>2. GitHub Deployment:</strong></p>
-                    <p>• Push this HTML file to a GitHub repository</p>
-                    <p>• Enable GitHub Pages in repository settings</p>
-                    <p><strong>3. Share with team:</strong></p>
-                    <p>• Normal URL: View-only mode for team members</p>
-                    <p>• Admin URL: Add <code>?admin=true</code> for editing access</p>
+                    <h3>🚀 Network Issue Detected</h3>
+                    <p><strong>Your network is blocking geocoding API calls</strong></p>
+                    <p>- Using offline mode with manual coordinates</p>
+                    <p>- Contact IT to allow access to nominatim.openstreetmap.org</p>
+                    <p>- Or use the manual coordinate input below</p>
                 </div>
 
                 <div id="firebaseStatus" class="firebase-status error">
                     ⚠️ Firebase not configured. Using local storage.
+                </div>
+
+                <div id="networkStatus" class="network-status offline">
+                    🔴 Geocoding API Offline - Using Manual Coordinates
+                </div>
+
+                <div class="debug-info" id="debugInfo" style="display: none;">
+                    <strong>Debug Info:</strong><br>
+                    <div id="debugContent"></div>
                 </div>
 
                 <div class="success-message" id="successMessage"></div>
@@ -532,19 +589,32 @@
                     <div class="form-group has-icon">
                         <label for="currentLocation">Current Location *</label>
                         <div class="autocomplete-container">
-                
-                            <input type="text" id="currentLocation" placeholder="Start typing city name..." required autocomplete="off">
-                            <span class="input-icon">🔍</span>
+                            <input type="text" id="currentLocation" placeholder="e.g., Toronto, Canada" required autocomplete="off">
+                            <span class="input-icon">📍</span>
                             <div class="autocomplete-suggestions" id="currentLocationSuggestions"></div>
+                        </div>
+                        <button type="button" class="manual-coords-toggle" onclick="toggleManualCoords('current')">
+                            📊 Manual Coordinates
+                        </button>
+                        <div class="coordinates-input" id="currentCoords" style="display: none;">
+                            <input type="number" step="any" placeholder="Latitude" id="currentLat">
+                            <input type="number" step="any" placeholder="Longitude" id="currentLng">
                         </div>
                     </div>
                     
                     <div class="form-group has-icon">
                         <label for="birthPlace">Birth Place *</label>
                         <div class="autocomplete-container">
-                            <input type="text" id="birthPlace" placeholder="Start typing city name..." required autocomplete="off">
-                            <span class="input-icon">🔍</span>
+                            <input type="text" id="birthPlace" placeholder="e.g., London, UK" required autocomplete="off">
+                            <span class="input-icon">🏠</span>
                             <div class="autocomplete-suggestions" id="birthPlaceSuggestions"></div>
+                        </div>
+                        <button type="button" class="manual-coords-toggle" onclick="toggleManualCoords('birth')">
+                            📊 Manual Coordinates
+                        </button>
+                        <div class="coordinates-input" id="birthCoords" style="display: none;">
+                            <input type="number" step="any" placeholder="Latitude" id="birthLat">
+                            <input type="number" step="any" placeholder="Longitude" id="birthLng">
                         </div>
                     </div>
                     
@@ -584,6 +654,8 @@
 
                     <button type="submit" class="btn" id="submitBtn">➕ Add Team Member</button>
                     <button type="button" id="cancelEdit" class="btn btn-secondary" style="display: none;">❌ Cancel Edit</button>
+                    <button type="button" id="debugToggle" class="btn btn-secondary">🐛 Toggle Debug</button>
+                    <button type="button" id="testGeocode" class="btn btn-secondary">🌐 Test Network</button>
                 </form>
 
                 <div class="team-list">
@@ -615,8 +687,7 @@
     
     <!-- Leaflet Maps -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <script>
+	    <script>
         // Initialize all variables at the top
         var db = null;
         var firebaseInitialized = false;
@@ -630,23 +701,316 @@
         var selectedSuggestionIndex = -1;
         var currentSuggestions = [];
         var map = null;
+        var debugMode = false;
+        var debugLog = [];
+        var networkOnline = false;
+        var manualCoordsMode = {
+            current: false,
+            birth: false
+        };
 
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyCgEh2UhEZFCFtn_2h_scIA8YHYTPHPy2M",
-  authDomain: "srt-team-map.firebaseapp.com",
-  databaseURL: "https://srt-team-map-default-rtdb.firebaseio.com",
-  projectId: "srt-team-map",
-  storageBucket: "srt-team-map.firebasestorage.app",
-  messagingSenderId: "1041786833700",
-  appId: "1:1041786833700:web:a4927a4e88470cd55d81b1",
-  measurementId: "G-J2RNT7MSR1"
-};
+        // Common coordinates for major cities (fallback when API is unavailable)
+        var cityCoordinates = {
+            'toronto, canada': [43.6532, -79.3832],
+            'vancouver, canada': [49.2827, -123.1207],
+            'montreal, canada': [45.5017, -73.5673],
+            'calgary, canada': [51.0447, -114.0719],
+            'ottawa, canada': [45.4215, -75.6972],
+            'edmonton, canada': [53.5461, -113.4938],
+            'winnipeg, canada': [49.8951, -97.1384],
+            'quebec city, canada': [46.8139, -71.2080],
+            'london, uk': [51.5074, -0.1278],
+            'london, england': [51.5074, -0.1278],
+            'manchester, uk': [53.4808, -2.2426],
+            'birmingham, uk': [52.4862, -1.8904],
+            'new york, usa': [40.7128, -74.0060],
+            'los angeles, usa': [34.0522, -118.2437],
+            'chicago, usa': [41.8781, -87.6298],
+            'houston, usa': [29.7604, -95.3698],
+            'phoenix, usa': [33.4484, -112.0740],
+            'philadelphia, usa': [39.9526, -75.1652],
+            'sydney, australia': [-33.8688, 151.2093],
+            'melbourne, australia': [-37.8136, 144.9631],
+            'brisbane, australia': [-27.4705, 153.0260],
+            'tokyo, japan': [35.6762, 139.6503],
+            'osaka, japan': [34.6937, 135.5023],
+            'beijing, china': [39.9042, 116.4074],
+            'shanghai, china': [31.2304, 121.4737],
+            'mumbai, india': [19.0760, 72.8777],
+            'delhi, india': [28.7041, 77.1025],
+            'manila, philippines': [14.5995, 120.9842],
+            'manila, capital district': [14.5995, 120.9842],
+            'cebu, philippines': [10.3157, 123.8854],
+            'davao, philippines': [7.1907, 125.4553],
+            'philippines': [12.8797, 121.7740],
+            'lahore, pakistan': [31.5204, 74.3587],
+            'karachi, pakistan': [24.8607, 67.0011],
+            'tehran, iran': [35.6892, 51.3890],
+            'durban, south africa': [-29.8587, 31.0218],
+            'cape town, south africa': [-33.9249, 18.4241],
+            'johannesburg, south africa': [-26.2041, 28.0473],
+            'tegucigalpa, honduras': [14.0723, -87.1921],
+            'burnaby, canada': [49.2488, -122.9805],
+            'brampton, canada': [43.7315, -79.7624],
+            'saskatoon, canada': [52.1332, -106.6700],
+            'regina, canada': [50.4452, -104.6189],
+            'halifax, canada': [44.6488, -63.5752],
+            'victoria, canada': [48.4284, -123.3656],
+            'nottingham, uk': [52.9548, -1.1581],
+            'england, united kingdom': [52.3555, -1.1743],
+            'cavite, philippines': [14.4791, 120.8970],
+            'marikina, philippines': [14.6507, 121.1029],
+            'okotoks, canada': [50.7267, -113.9782],
+            'prince george, canada': [53.9171, -122.7497],
+            'carrot river, canada': [53.1833, -103.8500],
+            'medicine hat, canada': [50.0412, -110.6765],
+            'etobicoke, canada': [43.6205, -79.5132],
+            'coquitlam, canada': [49.3847, -122.7820],
+            'new westminster, canada': [49.2057, -122.9110],
+            'city of langley, canada': [49.1042, -122.6604],
+            'grande-anse, new brunswick': [47.8064, -64.9141]
+        };
+
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCgEh2UhEZFCFtn_2h_scIA8YHYTPHPy2M",
+            authDomain: "srt-team-map.firebaseapp.com",
+            databaseURL: "https://srt-team-map-default-rtdb.firebaseio.com",
+            projectId: "srt-team-map",
+            storageBucket: "srt-team-map.firebasestorage.app",
+            messagingSenderId: "1041786833700",
+            appId: "1:1041786833700:web:a4927a4e88470cd55d81b1",
+            measurementId: "G-J2RNT7MSR1"
+        };
+		        // Enhanced debug logging
+        function debugLog(message, data) {
+            var timestamp = new Date().toLocaleTimeString();
+            var logEntry = timestamp + ': ' + message;
+            if (data) {
+                logEntry += ' | Data: ' + JSON.stringify(data);
+            }
+            window.debugLog = window.debugLog || [];
+            window.debugLog.push(logEntry);
+            
+            if (debugMode) {
+                console.log(logEntry);
+                updateDebugDisplay();
+            }
+        }
+
+        function updateDebugDisplay() {
+            var debugContent = document.getElementById('debugContent');
+            if (debugContent && window.debugLog) {
+                debugContent.innerHTML = window.debugLog.slice(-10).join('<br>');
+            }
+        }
+
+        function toggleDebugMode() {
+            debugMode = !debugMode;
+            var debugInfo = document.getElementById('debugInfo');
+            if (debugMode) {
+                debugInfo.style.display = 'block';
+                updateDebugDisplay();
+            } else {
+                debugInfo.style.display = 'none';
+            }
+        }
+
+        // Toggle manual coordinates input
+        function toggleManualCoords(type) {
+            manualCoordsMode[type] = !manualCoordsMode[type];
+            var coordsDiv = document.getElementById(type + 'Coords');
+            var toggle = event.target;
+            
+            if (manualCoordsMode[type]) {
+                coordsDiv.style.display = 'grid';
+                toggle.textContent = '🔤 Text Input';
+                toggle.style.background = '#28a745';
+            } else {
+                coordsDiv.style.display = 'none';
+                toggle.textContent = '📊 Manual Coordinates';
+                toggle.style.background = '#17a2b8';
+            }
+        }
+
+        // Test network connectivity
+        function testNetworkConnectivity() {
+            var testBtn = document.getElementById('testGeocode');
+            var networkStatus = document.getElementById('networkStatus');
+            
+            testBtn.disabled = true;
+            testBtn.textContent = '🔄 Testing...';
+            networkStatus.textContent = '🔄 Testing network connectivity...';
+            networkStatus.className = 'network-status';
+            
+            // Test with a simple request
+            fetch('https://nominatim.openstreetmap.org/search?format=json&q=Toronto&limit=1')
+                .then(function(response) {
+                    if (response.ok) {
+                        networkOnline = true;
+                        networkStatus.textContent = '🟢 Geocoding API Online - Network Working!';
+                        networkStatus.className = 'network-status online';
+                        showMessage('Network test successful! Geocoding API is accessible.', 'success');
+                    } else {
+                        throw new Error('HTTP ' + response.status);
+                    }
+                })
+                .catch(function(error) {
+                    networkOnline = false;
+                    networkStatus.textContent = '🔴 Geocoding API Blocked - Using Manual Coordinates';
+                    networkStatus.className = 'network-status offline';
+                    showMessage('Network blocked. Using offline mode with manual coordinates.', 'error');
+                })
+                .finally(function() {
+                    testBtn.disabled = false;
+                    testBtn.textContent = '🌐 Test Network';
+                });
+        }
+
+        // Fallback geocoding with offline coordinates
+        function geocodeLocationWithFallback(location) {
+            debugLog('Attempting to geocode: ' + location);
+            
+            // First try offline coordinates
+            var cleanLocation = location.toLowerCase().trim();
+            if (cityCoordinates[cleanLocation]) {
+                debugLog('Found offline coordinates for: ' + location, cityCoordinates[cleanLocation]);
+                return Promise.resolve(cityCoordinates[cleanLocation]);
+            }
+            
+            // Try partial matches
+            for (var city in cityCoordinates) {
+                if (cleanLocation.includes(city.split(',')[0]) || city.includes(cleanLocation.split(',')[0])) {
+                    debugLog('Found partial match for: ' + location + ' -> ' + city, cityCoordinates[city]);
+                    return Promise.resolve(cityCoordinates[city]);
+                }
+            }
+            
+            // If network is available, try API
+            if (networkOnline) {
+                return geocodeLocation(location);
+            }
+            
+            // No coordinates found
+            debugLog('No coordinates found for: ' + location);
+            showMessage('No coordinates found for: ' + location + '. Please use manual coordinates.', 'error');
+            return Promise.resolve(null);
+        }
+
+        // Enhanced geocoding with retry logic
+        function geocodeLocation(location, retryCount = 0) {
+            debugLog('API geocoding location: ' + location, { retryCount: retryCount });
+            
+            return fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(location))
+                .then(function(response) {
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(function(data) {
+                    if (data && data.length > 0) {
+                        var coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+                        debugLog('API geocoded successfully: ' + location, { coords: coords });
+                        return coords;
+                    }
+                    debugLog('No API results for: ' + location);
+                    return null;
+                })
+                .catch(function(error) {
+                    console.error('Geocoding error for "' + location + '":', error);
+                    debugLog('API geocoding error: ' + location, { error: error.message });
+                    
+                    // Mark network as offline on connection errors
+                    if (error.message.includes('Failed to fetch') || error.message.includes('ERR_TUNNEL_CONNECTION_FAILED')) {
+                        networkOnline = false;
+                        var networkStatus = document.getElementById('networkStatus');
+                        if (networkStatus) {
+                            networkStatus.textContent = '🔴 Geocoding API Blocked - Using Manual Coordinates';
+                            networkStatus.className = 'network-status offline';
+                        }
+                    }
+                    
+                    // Retry logic for rate limiting
+                    if (retryCount < 2 && (error.message.includes('429') || error.message.includes('HTTP 429'))) {
+                        var delay = (retryCount + 1) * 2000; // 2s, 4s delays
+                        debugLog('Retrying geocoding after ' + delay + 'ms: ' + location);
+                        return new Promise(function(resolve) {
+                            setTimeout(function() {
+                                resolve(geocodeLocation(location, retryCount + 1));
+                            }, delay);
+                        });
+                    }
+                    
+                    return null;
+                });
+        }
+
+        // Function to handle international date line crossing
+        function createOptimalPolyline(coord1, coord2) {
+            var lat1 = coord1[0], lon1 = coord1[1];
+            var lat2 = coord2[0], lon2 = coord2[1];
+            
+            // Calculate the difference in longitude
+            var lonDiff = Math.abs(lon2 - lon1);
+            
+            debugLog('Creating line between coordinates', { 
+                from: coord1, 
+                to: coord2, 
+                lonDiff: lonDiff 
+            });
+            
+            // If the longitude difference is greater than 180°, we need to handle date line crossing
+            if (lon1 > 0 && lon2 < 0 && lonDiff > 180) {
+                // Going from positive to negative longitude (crossing date line eastward)
+                var midLat = (lat1 + lat2) / 2;
+                return [
+                    L.polyline([[lat1, lon1], [midLat, 180]], {
+                        color: '#ff6b6b',
+                        weight: 3,
+                        opacity: 0.8,
+                        dashArray: '10, 10'
+                    }),
+                    L.polyline([[midLat, -180], [lat2, lon2]], {
+                        color: '#ff6b6b',
+                        weight: 3,
+                        opacity: 0.8,
+                        dashArray: '10, 10'
+                    })
+                ];
+            } else if (lon1 < 0 && lon2 > 0 && lonDiff > 180) {
+                // Going from negative to positive longitude (crossing date line westward)
+                var midLat = (lat1 + lat2) / 2;
+                return [
+                    L.polyline([[lat1, lon1], [midLat, -180]], {
+                        color: '#ff6b6b',
+                        weight: 3,
+                        opacity: 0.8,
+                        dashArray: '10, 10'
+                    }),
+                    L.polyline([[midLat, 180], [lat2, lon2]], {
+                        color: '#ff6b6b',
+                        weight: 3,
+                        opacity: 0.8,
+                        dashArray: '10, 10'
+                    })
+                ];
+            } else {
+                // Normal case - no date line crossing
+                return [L.polyline([coord1, coord2], {
+                    color: '#ff6b6b',
+                    weight: 3,
+                    opacity: 0.8,
+                    dashArray: '10, 10'
+                })];
+            }
+        }
 
         // Utility functions
         function showMessage(message, type) {
             type = type || 'info';
             console.log('[' + type.toUpperCase() + '] ' + message);
+            debugLog(message);
             
             if (type === 'success') {
                 var successEl = document.getElementById('successMessage');
@@ -758,9 +1122,13 @@ const firebaseConfig = {
                 }, 100);
             }
         }
-
-        // Search locations using Nominatim API
+		        // Search locations using Nominatim API (only if network is online)
         function searchLocations(query, suggestionsContainer, inputElement) {
+            if (!networkOnline) {
+                showOfflineSuggestions(query, suggestionsContainer, inputElement);
+                return;
+            }
+            
             showLoadingIndicator(suggestionsContainer);
             showMessage('Searching for: ' + query, 'info');
             
@@ -780,9 +1148,32 @@ const firebaseConfig = {
                 })
                 .catch(function(error) {
                     console.error('Location search error:', error);
-                    showMessage('Location search error: ' + error.message, 'error');
-                    showError(suggestionsContainer);
+                    networkOnline = false;
+                    showOfflineSuggestions(query, suggestionsContainer, inputElement);
                 });
+        }
+
+        // Show offline suggestions based on cached coordinates
+        function showOfflineSuggestions(query, suggestionsContainer, inputElement) {
+            var cleanQuery = query.toLowerCase().trim();
+            var matches = [];
+            
+            for (var city in cityCoordinates) {
+                if (city.includes(cleanQuery) || cleanQuery.includes(city.split(',')[0])) {
+                    matches.push({
+                        display_name: city.charAt(0).toUpperCase() + city.slice(1),
+                        offline: true
+                    });
+                }
+            }
+            
+            if (matches.length > 0) {
+                currentSuggestions = matches;
+                displaySuggestions(matches, suggestionsContainer, inputElement);
+            } else {
+                suggestionsContainer.innerHTML = '<div class="loading-indicator">No offline matches. Use manual coordinates.</div>';
+                suggestionsContainer.classList.add('active');
+            }
         }
 
         // Display search suggestions
@@ -791,9 +1182,16 @@ const firebaseConfig = {
             
             var html = suggestions.map(function(suggestion, index) {
                 var displayName = suggestion.display_name;
-                var parts = displayName.split(',');
-                var mainLocation = parts.slice(0, 2).join(',').trim();
-                var details = parts.slice(2).join(',').trim();
+                var isOffline = suggestion.offline;
+                
+                if (!isOffline) {
+                    var parts = displayName.split(',');
+                    var mainLocation = parts.slice(0, 2).join(',').trim();
+                    var details = parts.slice(2).join(',').trim();
+                } else {
+                    var mainLocation = displayName;
+                    var details = '(Offline coordinates)';
+                }
 
                 return '<div class="suggestion-item" data-index="' + index + '" onclick="selectSuggestion(' + index + ', \'' + inputElement.id + '\')">' +
                     '<div class="suggestion-main">' + mainLocation + '</div>' +
@@ -813,8 +1211,14 @@ const firebaseConfig = {
                 var container = document.getElementById(inputId + 'Suggestions');
                 
                 var displayName = suggestion.display_name;
-                var parts = displayName.split(',');
-                var cleanName = parts.slice(0, 2).join(',').trim();
+                var cleanName;
+                
+                if (suggestion.offline) {
+                    cleanName = displayName;
+                } else {
+                    var parts = displayName.split(',');
+                    cleanName = parts.slice(0, 2).join(',').trim();
+                }
                 
                 input.value = cleanName;
                 hideSuggestions(container);
@@ -914,6 +1318,23 @@ const firebaseConfig = {
                     countriesVisited: document.getElementById('countriesVisited').value,
                     timestamp: new Date().toISOString()
                 };
+
+                // Add manual coordinates if provided
+                if (manualCoordsMode.current) {
+                    var currentLat = document.getElementById('currentLat').value;
+                    var currentLng = document.getElementById('currentLng').value;
+                    if (currentLat && currentLng) {
+                        formData.currentCoords = [parseFloat(currentLat), parseFloat(currentLng)];
+                    }
+                }
+
+                if (manualCoordsMode.birth) {
+                    var birthLat = document.getElementById('birthLat').value;
+                    var birthLng = document.getElementById('birthLng').value;
+                    if (birthLat && birthLng) {
+                        formData.birthCoords = [parseFloat(birthLat), parseFloat(birthLng)];
+                    }
+                }
 
                 showMessage('Form data: ' + JSON.stringify(formData), 'info');
 
@@ -1046,8 +1467,7 @@ const firebaseConfig = {
                 showMessage('Error loading team members: ' + error.message, 'error');
             }
         }
-
-        // Generate questions HTML for display
+		        // Generate questions HTML for display
         function generateQuestionsHTML(member) {
             var questions = [];
             
@@ -1092,7 +1512,6 @@ const firebaseConfig = {
                     '<div class="member-locations">' +
                         '📍 Current: ' + member.currentLocation + '<br>' +
                         '🏠 Born: ' + member.birthPlace +
-
                     generateQuestionsHTML(member) +
                     '</div>' +
                     '<div class="member-actions">' +
@@ -1124,7 +1543,6 @@ const firebaseConfig = {
                         '🏠 Born: ' + member.birthPlace +
                     generateQuestionsHTML(member) +
                     '</div>' +
-                    
                 '</div>';
             }).join('');
         }
@@ -1145,6 +1563,17 @@ const firebaseConfig = {
             document.getElementById('canadianProvinces').value = member.canadianProvinces || '';
             document.getElementById('countriesVisited').value = member.countriesVisited || '';
 
+            // Load manual coordinates if they exist
+            if (member.currentCoords) {
+                document.getElementById('currentLat').value = member.currentCoords[0];
+                document.getElementById('currentLng').value = member.currentCoords[1];
+                toggleManualCoords('current');
+            }
+            if (member.birthCoords) {
+                document.getElementById('birthLat').value = member.birthCoords[0];
+                document.getElementById('birthLng').value = member.birthCoords[1];
+                toggleManualCoords('birth');
+            }
 
             editingId = id;
             document.getElementById('cancelEdit').style.display = 'block';
@@ -1158,25 +1587,16 @@ const firebaseConfig = {
             document.getElementById('cancelEdit').style.display = 'none';
             document.querySelector('.btn[type="submit"]').textContent = '➕ Add Team Member';
             document.getElementById('teamForm').reset();
+            
+            // Reset manual coordinate toggles
+            if (manualCoordsMode.current) {
+                toggleManualCoords('current');
+            }
+            if (manualCoordsMode.birth) {
+                toggleManualCoords('birth');
+            }
+            
             showMessage('Edit cancelled', 'info');
-        }
-
-        // Geocoding function
-        function geocodeLocation(location) {
-            return fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(location))
-                .then(function(response) {
-                    return response.json();
-                })
-                .then(function(data) {
-                    if (data && data.length > 0) {
-                        return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-                    }
-                    return null;
-                })
-                .catch(function(error) {
-                    console.error('Geocoding error:', error);
-                    return null;
-                });
         }
 
         // Update map with team members
@@ -1191,10 +1611,16 @@ const firebaseConfig = {
             connectionLines = [];
 
             var promises = teamMembers.map(function(member) {
-                return Promise.all([
-                    geocodeLocation(member.currentLocation),
-                    geocodeLocation(member.birthPlace)
-                ]).then(function(coords) {
+                // Use manual coordinates if available, otherwise geocode
+                var currentPromise = member.currentCoords ? 
+                    Promise.resolve(member.currentCoords) : 
+                    geocodeLocationWithFallback(member.currentLocation);
+                    
+                var birthPromise = member.birthCoords ? 
+                    Promise.resolve(member.birthCoords) : 
+                    geocodeLocationWithFallback(member.birthPlace);
+
+                return Promise.all([currentPromise, birthPromise]).then(function(coords) {
                     var currentCoords = coords[0];
                     var birthCoords = coords[1];
 
@@ -1244,15 +1670,12 @@ const firebaseConfig = {
 
                     // Only show connection lines when showLines is true
                     if (showLines && currentCoords && birthCoords) {
-                        var line = L.polyline([currentCoords, birthCoords], {
-                            color: '#ff6b6b',
-                            weight: 2,
-                            opacity: 0.7,
-                            dashArray: '10, 10'
-                        }).addTo(map);
-                        connectionLines.push(line);
+                        var polylines = createOptimalPolyline(currentCoords, birthCoords);
+                        polylines.forEach(function(polyline) {
+                            polyline.addTo(map);
+                            connectionLines.push(polyline);
+                        });
                     }
-
                 });
             });
 
@@ -1305,8 +1728,21 @@ const firebaseConfig = {
                 cancelEditBtn.addEventListener('click', cancelEdit);
             }
             
+            var debugToggleBtn = document.getElementById('debugToggle');
+            if (debugToggleBtn) {
+                debugToggleBtn.addEventListener('click', toggleDebugMode);
+            }
+            
+            var testGeocodeBtn = document.getElementById('testGeocode');
+            if (testGeocodeBtn) {
+                testGeocodeBtn.addEventListener('click', testNetworkConnectivity);
+            }
+            
             setupAutocomplete('currentLocation');
             setupAutocomplete('birthPlace');
+            
+            // Test network connectivity on load
+            testNetworkConnectivity();
             
             if (!firebaseInitialized) {
                 var existingMembers = JSON.parse(localStorage.getItem('teamMembers') || '[]');
@@ -1343,107 +1779,8 @@ const firebaseConfig = {
         window.enableDebug = function() {
             console.log('Debug mode enabled - check browser console for detailed logs');
         };
+        
         console.log('Team Location Map loaded. Type "enableDebug()" to see debug information.');
-
-		// NEW: Enhanced debug logging variables
-var debugMode = false;
-var debugLog = [];
-
-// NEW: Debug logging function
-function debugLog(message, data) {
-    var timestamp = new Date().toLocaleTimeString();
-    var logEntry = timestamp + ': ' + message;
-    if (data) {
-        logEntry += ' | Data: ' + JSON.stringify(data);
-    }
-    debugLog.push(logEntry);
-    
-    if (debugMode) {
-        console.log(logEntry);
-        updateDebugDisplay();
-    }
-}
-
-// NEW: Update debug display
-function updateDebugDisplay() {
-    var debugContent = document.getElementById('debugContent');
-    if (debugContent) {
-        debugContent.innerHTML = debugLog.slice(-10).join('<br>');
-    }
-}
-
-// NEW: Toggle debug mode
-function toggleDebugMode() {
-    debugMode = !debugMode;
-    var debugInfo = document.getElementById('debugInfo');
-    if (debugMode) {
-        debugInfo.style.display = 'block';
-        updateDebugDisplay();
-    } else {
-        debugInfo.style.display = 'none';
-    }
-}
-
-// NEW: Function to handle international date line crossing
-function createOptimalPolyline(coord1, coord2) {
-    var lat1 = coord1[0], lon1 = coord1[1];
-    var lat2 = coord2[0], lon2 = coord2[1];
-    
-    // Calculate the difference in longitude
-    var lonDiff = Math.abs(lon2 - lon1);
-    
-    debugLog('Creating line between coordinates', { 
-        from: coord1, 
-        to: coord2, 
-        lonDiff: lonDiff 
-    });
-    
-    // If the longitude difference is greater than 180°, we need to handle date line crossing
-    if (lon1 > 0 && lon2 < 0 && lonDiff > 180) {
-        // Going from positive to negative longitude (crossing date line eastward)
-        var midLat = (lat1 + lat2) / 2;
-        return [
-            L.polyline([[lat1, lon1], [midLat, 180]], {
-                color: '#ff6b6b',
-                weight: 3,
-                opacity: 0.8,
-                dashArray: '10, 10'
-            }),
-            L.polyline([[midLat, -180], [lat2, lon2]], {
-                color: '#ff6b6b',
-                weight: 3,
-                opacity: 0.8,
-                dashArray: '10, 10'
-            })
-        ];
-    } else if (lon1 < 0 && lon2 > 0 && lonDiff > 180) {
-        // Going from negative to positive longitude (crossing date line westward)
-        var midLat = (lat1 + lat2) / 2;
-        return [
-            L.polyline([[lat1, lon1], [midLat, -180]], {
-                color: '#ff6b6b',
-                weight: 3,
-                opacity: 0.8,
-                dashArray: '10, 10'
-            }),
-            L.polyline([[midLat, 180], [lat2, lon2]], {
-                color: '#ff6b6b',
-                weight: 3,
-                opacity: 0.8,
-                dashArray: '10, 10'
-            })
-        ];
-    } else {
-        // Normal case - no date line crossing
-        return [L.polyline([coord1, coord2], {
-            color: '#ff6b6b',
-            weight: 3,
-            opacity: 0.8,
-            dashArray: '10, 10'
-        })];
-    }
-}										
-	
     </script>
 </body>
 </html>
