@@ -76,8 +76,8 @@
 
 		.team-member.view-only {
     cursor: default;
-    flex-shrink: 0; /* Prevent cards from shrinking */
-    min-height: fit-content;
+    flex-shrink: 0;
+    margin-bottom: 0; /* Remove margin, use gap instead */
 }
 
 .team-member.view-only:hover {
@@ -150,8 +150,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 170px); /* Set specific height */
-    max-height: calc(100vh - 170px);
+    height: 100%; /* Take full available height */
 }
 
         .view-only-sidebar h2 {
@@ -574,33 +573,34 @@
 }
 
 .sidebar-header {
-    padding: 20px 20px 15px 20px; /* Added bottom padding */
+    padding: 20px 20px 15px 20px;
     background: white;
-    border-bottom: 2px solid #e0e0e0; /* Made border more visible */
-    flex-shrink: 0;
+    border-bottom: 2px solid #e0e0e0;
+    flex-shrink: 0; /* Don't shrink this section */
 }
 
 .sidebar-content {
-    flex: 1;
-    overflow-y: auto; /* Force scrolling */
+    flex: 1; /* Take all remaining space */
+    overflow-y: auto;
     overflow-x: hidden;
-    padding: 15px 20px 20px 20px; /* Added top padding for space */
-    min-height: 0; /* Important for flex scrolling */
+    padding: 15px 20px 20px 20px;
+    height: 0; /* Important: allows flex to work properly */
 }
 
 .sidebar-header h2 {
     color: #333;
-    margin: 20px 0 0 0; /* Increased top margin for space */
+    margin: 20px 0 0 0;
     text-align: center;
     font-size: 1.3rem;
-    padding-bottom: 10px; /* Added bottom padding */
+    padding-bottom: 10px;
 }
 
-		/* Ensure team members container is scrollable */
+/* Team member cards styling */
 #viewOnlyTeamMembers {
     display: flex;
     flex-direction: column;
-    gap: 10px; /* Space between team member cards */
+    gap: 10px;
+    padding-bottom: 10px; /* Extra space at bottom */
 }
 
 /* Force scrollbar to always show when needed */
