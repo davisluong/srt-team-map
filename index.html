@@ -1444,8 +1444,6 @@ function createOptimalPolyline(coord1, coord2) {
     }
 }
 
-		// 50+ major cities with pre-stored coordinates
-var cityCoordinates = {\n    'toronto, canada': [43.6532, -79.3832],\n    'vancouver, canada': [49.2827, -123.1207],\n    'manila, philippines': [14.5995, 120.9842],\n    // ... many more cities\n};
 
 		// Toggle manual coordinates for each location
 function toggleManualCoords(type) {\n    manualCoordsMode[type] = !manualCoordsMode[type];\n    var coordsDiv = document.getElementById(type + 'Coords');\n    // Show/hide coordinate input fields\n}
