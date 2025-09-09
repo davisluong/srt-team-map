@@ -702,7 +702,7 @@
         var currentSuggestions = [];
         var map = null;
         var debugMode = false;
-        var debugLog = [];
+        var addDebugLog = [];
         var networkOnline = false;
         var manualCoordsMode = {
             current: false,
@@ -783,27 +783,29 @@
             measurementId: "G-J2RNT7MSR1"
         };
 		        // Enhanced debug logging
-        function debugLog(message, data) {
-            var timestamp = new Date().toLocaleTimeString();
-            var logEntry = timestamp + ': ' + message;
-            if (data) {
-                logEntry += ' | Data: ' + JSON.stringify(data);
-            }
-            window.debugLog = window.debugLog || [];
-            window.debugLog.push(logEntry);
-            
-            if (debugMode) {
-                console.log(logEntry);
-                updateDebugDisplay();
-            }
-        }
+        function addDebugLog(message, data) {  // ← RENAMED FUNCTION
+    var timestamp = new Date().toLocaleTimeString();
+    var logEntry = timestamp + ': ' + message;
+    if (data) {
+        logEntry += ' | Data: ' + JSON.stringify(data);
+    }
+    window.debugLogArray = window.debugLogArray || [];  // ← RENAMED VARIABLE
+    window.debugLogArray.push(logEntry);
+    
+    if (debugMode) {
+        console.log(logEntry);
+        updateDebugDisplay();
+    }
+}
+
 
         function updateDebugDisplay() {
-            var debugContent = document.getElementById('debugContent');
-            if (debugContent && window.debugLog) {
-                debugContent.innerHTML = window.debugLog.slice(-10).join('<br>');
-            }
-        }
+    var debugContent = document.getElementById('debugContent');
+    if (debugContent && window.debugLogArray) {  // ← UPDATED REFERENCE
+        debugContent.innerHTML = window.debugLogArray.slice(-10).join('<br>');
+    }
+}
+
 
         function toggleDebugMode() {
             debugMode = !debugMode;
@@ -869,19 +871,19 @@
 
         // Fallback geocoding with offline coordinates
         function geocodeLocationWithFallback(location) {
-            debugLog('Attempting to geocode: ' + location);
+            addDebugLog('Attempting to geocode: ' + location);
             
             // First try offline coordinates
             var cleanLocation = location.toLowerCase().trim();
             if (cityCoordinates[cleanLocation]) {
-                debugLog('Found offline coordinates for: ' + location, cityCoordinates[cleanLocation]);
+                addDebugLog('Found offline coordinates for: ' + location, cityCoordinates[cleanLocation]);
                 return Promise.resolve(cityCoordinates[cleanLocation]);
             }
             
             // Try partial matches
             for (var city in cityCoordinates) {
                 if (cleanLocation.includes(city.split(',')[0]) || city.includes(cleanLocation.split(',')[0])) {
-                    debugLog('Found partial match for: ' + location + ' -> ' + city, cityCoordinates[city]);
+                    addDebugLog('Found partial match for: ' + location + ' -> ' + city, cityCoordinates[city]);
                     return Promise.resolve(cityCoordinates[city]);
                 }
             }
@@ -892,14 +894,14 @@
             }
             
             // No coordinates found
-            debugLog('No coordinates found for: ' + location);
+            addDebugLog('No coordinates found for: ' + location);
             showMessage('No coordinates found for: ' + location + '. Please use manual coordinates.', 'error');
             return Promise.resolve(null);
         }
 
         // Enhanced geocoding with retry logic
         function geocodeLocation(location, retryCount = 0) {
-            debugLog('API geocoding location: ' + location, { retryCount: retryCount });
+            addDebugLog('API geocoding location: ' + location, { retryCount: retryCount });
             
             return fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(location))
                 .then(function(response) {
@@ -911,15 +913,15 @@
                 .then(function(data) {
                     if (data && data.length > 0) {
                         var coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-                        debugLog('API geocoded successfully: ' + location, { coords: coords });
+                        addDebugLog('API geocoded successfully: ' + location, { coords: coords });
                         return coords;
                     }
-                    debugLog('No API results for: ' + location);
+                    addDebugLog('No API results for: ' + location);
                     return null;
                 })
                 .catch(function(error) {
                     console.error('Geocoding error for "' + location + '":', error);
-                    debugLog('API geocoding error: ' + location, { error: error.message });
+                    addDebugLog('API geocoding error: ' + location, { error: error.message });
                     
                     // Mark network as offline on connection errors
                     if (error.message.includes('Failed to fetch') || error.message.includes('ERR_TUNNEL_CONNECTION_FAILED')) {
@@ -934,7 +936,7 @@
                     // Retry logic for rate limiting
                     if (retryCount < 2 && (error.message.includes('429') || error.message.includes('HTTP 429'))) {
                         var delay = (retryCount + 1) * 2000; // 2s, 4s delays
-                        debugLog('Retrying geocoding after ' + delay + 'ms: ' + location);
+                        addDebugLog('Retrying geocoding after ' + delay + 'ms: ' + location);
                         return new Promise(function(resolve) {
                             setTimeout(function() {
                                 resolve(geocodeLocation(location, retryCount + 1));
@@ -954,7 +956,7 @@
             // Calculate the difference in longitude
             var lonDiff = Math.abs(lon2 - lon1);
             
-            debugLog('Creating line between coordinates', { 
+            addDebugLog('Creating line between coordinates', { 
                 from: coord1, 
                 to: coord2, 
                 lonDiff: lonDiff 
