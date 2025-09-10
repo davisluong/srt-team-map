@@ -57,10 +57,9 @@
             backdrop-filter: blur(10px);
         }
 
-        .admin-toggle:hover {
-            background: rgba(255,255,255,0.3);
-            border-color: rgba(255,255,255,0.5);
-        }
+        .admin-toggle {
+    display: none !important;
+}
 
         .main-content {
     display: grid;
@@ -1218,10 +1217,11 @@
 
         // Check if admin mode is enabled
         function checkAdminMode() {
-            var urlParams = new URLSearchParams(window.location.search);
-            isAdminMode = urlParams.get('admin') === 'true';
-            updateUIMode();
-        }
+    var urlParams = new URLSearchParams(window.location.search);
+    // Only allow admin mode with secret parameter
+    isAdminMode = urlParams.get('admin') === 'true' && urlParams.get('secret') === 'Hoji2025'; // ← Change this secret
+    updateUIMode();
+}
 
         // Toggle admin mode
         function toggleAdminMode() {
