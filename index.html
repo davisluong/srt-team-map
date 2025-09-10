@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -57,9 +58,10 @@
             backdrop-filter: blur(10px);
         }
 
-        .admin-toggle {
-    display: none !important;
-}
+        .admin-toggle:hover {
+            background: rgba(255,255,255,0.3);
+            border-color: rgba(255,255,255,0.5);
+        }
 
         .main-content {
     display: grid;
@@ -809,7 +811,9 @@
 
 
 
-        
+        <div class="mode-indicator view" id="modeIndicator">
+            👁️ View Mode
+        </div>
     </div>
 
     <!-- Firebase SDK -->
@@ -1215,11 +1219,10 @@
 
         // Check if admin mode is enabled
         function checkAdminMode() {
-    var urlParams = new URLSearchParams(window.location.search);
-    // Only allow admin mode with secret parameter
-    isAdminMode = urlParams.get('admin') === 'true' && urlParams.get('secret') === 'Hoji2025'; // ← Change this secret
-    updateUIMode();
-}
+            var urlParams = new URLSearchParams(window.location.search);
+            isAdminMode = urlParams.get('admin') === 'true';
+            updateUIMode();
+        }
 
         // Toggle admin mode
         function toggleAdminMode() {
