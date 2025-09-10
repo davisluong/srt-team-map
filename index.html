@@ -75,15 +75,13 @@
 }
 
 		.team-member.view-only {
-    cursor: pointer; /* Make it clear they're clickable */
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
+    cursor: default;
+    flex-shrink: 0;
+    margin-bottom: 0; /* Remove margin, use gap instead */
 }
 
 .team-member.view-only:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    border-color: #667eea;
+    transform: none;
 }
 
         .map-container {
@@ -533,7 +531,13 @@
             background: rgba(40, 167, 69, 0.8);
         }
 
+        .team-member.view-only {
+            cursor: default;
+        }
 
+        .team-member.view-only:hover {
+            transform: none;
+        }
 		.custom-tooltip {
     background: rgba(0, 0, 0, 0.8) !important;
     color: white !important;
@@ -643,48 +647,6 @@
 
 		.team-member.view-only:last-child {
     margin-bottom: 20px; /* Extra space for the last member */
-}
-
-		.team-member.view-only.selected {
-    border-color: #667eea;
-    background: #f0f4ff;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-}
-
-.team-member.view-only.selected .member-name {
-    color: #667eea;
-    font-weight: bold;
-}
-
-/* Selection controls */
-.selection-controls {
-    padding: 10px 0;
-    border-bottom: 1px solid #e0e0e0;
-    margin-bottom: 15px;
-}
-
-.selection-controls button {
-    background: #667eea;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 15px;
-    cursor: pointer;
-    font-size: 11px;
-    margin-right: 5px;
-    transition: all 0.3s ease;
-}
-
-.selection-controls button:hover {
-    background: #5a6fd8;
-}
-
-.selection-controls button.secondary {
-    background: #6c757d;
-}
-
-.selection-controls button.secondary:hover {
-    background: #5a6268;
 }
 
     </style>
@@ -838,12 +800,6 @@
             <p>Explore our team members and their locations on the map.</p>
         </div>
         <h2>👥 Our Team (<span id="viewOnlyMemberCount">0</span>)</h2>
-		<div class="selection-controls">
-        <button onclick="selectAllMembers()">✓ Select All</button>
-        <button onclick="clearSelection()" class="secondary">✗ Clear All</button>
-        <button onclick="showSelectedOnly()" id="showSelectedBtn">👁️ Show Selected</button>
-        <span id="selectedCount" style="font-size: 11px; color: #666; margin-left: 10px;"></span>
-   		 </div>
     </div>
         <!-- Scrollable Content Section with explicit height -->
     <div class="sidebar-content" style="height: 100%; overflow-y: scroll;">
@@ -886,177 +842,6 @@
             current: false,
             birth: false
         };
-
-		var selectedMembers = new Set(); // Track selected member IDs
-		var showingSelectedOnly = false;
-
-		// Toggle member selection
-function toggleMemberSelection(memberId, event) {
-    event.stopPropagation(); // Prevent other click events
-    
-    if (selectedMembers.has(memberId)) {
-        selectedMembers.delete(memberId);
-    } else {
-        selectedMembers.add(memberId);
-    }
-    
-    updateMemberDisplay();
-    updateSelectionControls();
-    
-    // If we're in "show selected only" mode, update the map
-    if (showingSelectedOnly) {
-        updateMapWithSelection();
-    }
-}
-
-// Select all members
-function selectAllMembers() {
-    selectedMembers.clear();
-    teamMembers.forEach(function(member) {
-        selectedMembers.add(member.id);
-    });
-    updateMemberDisplay();
-    updateSelectionControls();
-}
-
-// Clear all selections
-function clearSelection() {
-    selectedMembers.clear();
-    updateMemberDisplay();
-    updateSelectionControls();
-    
-    // If we were showing selected only, show all again
-    if (showingSelectedOnly) {
-        showingSelectedOnly = false;
-        updateMap(); // Show all members
-        document.getElementById('showSelectedBtn').textContent = '👁️ Show Selected';
-    }
-}
-
-// Show only selected members on map
-function showSelectedOnly() {
-    if (selectedMembers.size === 0) {
-        showMessage('Please select some team members first', 'error');
-        return;
-    }
-    
-    showingSelectedOnly = !showingSelectedOnly;
-    var btn = document.getElementById('showSelectedBtn');
-    
-    if (showingSelectedOnly) {
-        btn.textContent = '🌍 Show All';
-        updateMapWithSelection();
-        showMessage('Showing ' + selectedMembers.size + ' selected members', 'info');
-    } else {
-        btn.textContent = '👁️ Show Selected';
-        updateMap(); // Show all members
-        showMessage('Showing all team members', 'info');
-    }
-}
-
-// Update member display with selection styling
-function updateMemberDisplay() {
-    var memberElements = document.querySelectorAll('.team-member.view-only');
-    memberElements.forEach(function(element) {
-        var memberId = element.getAttribute('data-member-id');
-        if (selectedMembers.has(memberId)) {
-            element.classList.add('selected');
-        } else {
-            element.classList.remove('selected');
-        }
-    });
-}
-
-// Update selection control display
-function updateSelectionControls() {
-    var countElement = document.getElementById('selectedCount');
-    if (countElement) {
-        if (selectedMembers.size > 0) {
-            countElement.textContent = '(' + selectedMembers.size + ' selected)';
-        } else {
-            countElement.textContent = '';
-        }
-    }
-}
-
-// Update map to show only selected members
-function updateMapWithSelection() {
-    if (!map) return;
-    
-    showMessage('Updating map with selected members', 'info');
-    
-    // Clear existing markers and lines
-    markers.forEach(function(marker) { map.removeLayer(marker); });
-    connectionLines.forEach(function(line) { map.removeLayer(line); });
-    markers = [];
-    connectionLines = [];
-
-    // Filter to only selected members
-    var selectedTeamMembers = teamMembers.filter(function(member) {
-        return selectedMembers.has(member.id);
-    });
-
-    if (selectedTeamMembers.length === 0) {
-        showMessage('No selected members to display', 'info');
-        return;
-    }
-
-    // Use the same map update logic but with filtered members
-    var promises = selectedTeamMembers.map(function(member) {
-        // ... (same geocoding and marker creation logic as in updateMap)
-        // Copy the entire marker creation logic from updateMap function here
-        // but use selectedTeamMembers instead of teamMembers
-        
-        var currentPromise = member.currentCoords ? 
-            Promise.resolve(member.currentCoords) : 
-            geocodeLocationWithFallback(member.currentLocation);
-            
-        var birthPromise = member.birthCoords ? 
-            Promise.resolve(member.birthCoords) : 
-            geocodeLocationWithFallback(member.birthPlace);
-
-        return Promise.all([currentPromise, birthPromise]).then(function(coords) {
-            var currentCoords = coords[0];
-            var birthCoords = coords[1];
-
-            // Create markers (same logic as updateMap)
-            if (currentCoords) {
-                var currentMarker = L.marker(currentCoords, {
-                    icon: L.divIcon({
-                        className: 'custom-marker',
-                        html: '<div style="background: #007bff; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">📍</div>',
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15]
-                    })
-                }).addTo(map);
-
-                // Add popup and tooltip (same as updateMap)
-                currentMarker.bindPopup(/* same popup content */);
-                currentMarker.bindTooltip(member.name, {
-                    permanent: false,
-                    direction: 'top',
-                    offset: [0, -10],
-                    className: 'custom-tooltip'
-                });
-                markers.push(currentMarker);
-            }
-
-            // Birth place markers and connection lines (same logic)
-            if (showLines && birthCoords) {
-                // ... same birth marker and connection line logic
-            }
-        });
-    });
-
-    Promise.all(promises).then(function() {
-        if (markers.length > 0) {
-            var group = new L.featureGroup(markers);
-            map.fitBounds(group.getBounds().pad(0.1));
-        }
-        showMessage('Map updated with ' + selectedTeamMembers.length + ' selected members', 'info');
-    });
-}
-
 
         // Common coordinates for major cities (fallback when API is unavailable)
         var cityCoordinates = {
