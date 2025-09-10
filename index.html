@@ -465,15 +465,8 @@
             }
 
             .admin-toggle {
-                position: relative;
-                top: 0;
-                right: 0;
-                margin-bottom: 20px;
-                display: block;
-                width: fit-content;
-                margin-left: auto;
-                margin-right: auto;
-            }
+    display: none !important;
+}
         }
 
         .setup-instructions {
@@ -1219,10 +1212,11 @@
 
         // Check if admin mode is enabled
         function checkAdminMode() {
-            var urlParams = new URLSearchParams(window.location.search);
-            isAdminMode = urlParams.get('admin') === 'true';
-            updateUIMode();
-        }
+    var urlParams = new URLSearchParams(window.location.search);
+    // Only allow admin mode with secret parameter
+    isAdminMode = urlParams.get('admin') === 'true' && urlParams.get('secret') === 'Hoji2025'; // ← Change this secret
+    updateUIMode();
+}
 
         // Toggle admin mode
         function toggleAdminMode() {
