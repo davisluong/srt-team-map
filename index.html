@@ -580,10 +580,10 @@
 }
 
 .sidebar-content {
-    flex-grow: 1; /* Take all remaining space */
+    flex: 1; /* Take all remaining space */
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 15px 20px 20px 20px;
+    padding: 15px 20px 30px 20px;
     height: 0; /* Important: allows flex to work properly */
 }
 
@@ -600,7 +600,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding-bottom: 10px; /* Extra space at bottom */
+    padding-bottom: 30px; /* Extra space at bottom */
 }
 
 /* Force scrollbar to always show when needed */
@@ -645,6 +645,9 @@
     background: #a8a8a8;
 }
 
+		.team-member.view-only:last-child {
+    margin-bottom: 20px; /* Extra space for the last member */
+}
 
     </style>
 </head>
